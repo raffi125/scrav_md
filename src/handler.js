@@ -5,6 +5,89 @@ const { customLogger } = require('./lib/logger');
 const config = require('../config');
 const db = require('./lib/database');
 
+// ============================================================
+// 🚨 SISTEM LAPORAN ERROR TERPUSAT
+// ============================================================
+
+/**
+ * Mendeteksi tipe error berdasarkan message, code, dan name.
+ * @returns {{ emoji: string, label: string, severity: string }}
+ */
+function detectErrorType(err) {
+    const msg = (err.message || '').toLowerCase();
+    const code = err.code || '';
+    const name = err.name || '';
+
+    // --- NETWORK & KONEKSI ---
+    if (code === 'ECONNRESET' || msg.includes('econnreset'))     return { emoji: '🔌', label: 'Koneksi Terputus (ECONNRESET)',   severity: '🔴 KRITIS' };
+    if (code === 'ENOTFOUND' || msg.includes('enotfound'))       return { emoji: '🌐', label: 'DNS / Host Tidak Ditemukan',       severity: '🔴 KRITIS' };
+    if (code === 'ETIMEDOUT' || msg.includes('etimedout'))       return { emoji: '⏱️', label: 'Koneksi Timeout (ETIMEDOUT)',      severity: '🟠 TINGGI' };
+    if (code === 'ECONNREFUSED' || msg.includes('econnrefused')) return { emoji: '🚫', label: 'Koneksi Ditolak (ECONNREFUSED)',   severity: '🟠 TINGGI' };
+    if (msg.includes('timeout') || msg.includes('timed out'))   return { emoji: '⏰', label: 'Request Timeout',                  severity: '🟠 TINGGI' };
+    if (msg.includes('fetch') || msg.includes('network'))       return { emoji: '📡', label: 'Gagal Fetch / Network Error',      severity: '🟠 TINGGI' };
+    if (msg.includes('socket hang up') || msg.includes('socket')) return { emoji: '🔗', label: 'Socket Hang Up',                severity: '🟠 TINGGI' };
+
+    // --- API EKSTERNAL ---
+    if (msg.includes('rate limit') || msg.includes('too many request')) return { emoji: '🚦', label: 'Rate Limit API (429)',      severity: '🟡 SEDANG' };
+    if (msg.includes('api') && (msg.includes('invalid') || msg.includes('key') || msg.includes('token'))) return { emoji: '🔑', label: 'API Key Tidak Valid',      severity: '🔴 KRITIS' };
+    if (msg.includes('api') || msg.includes('status 5') || msg.includes('500') || msg.includes('502') || msg.includes('503')) return { emoji: '🌩️', label: 'Server API Error (5xx)',    severity: '🟠 TINGGI' };
+    if (msg.includes('401') || msg.includes('403') || msg.includes('unauthorized') || msg.includes('forbidden')) return { emoji: '🔒', label: 'Akses Ditolak (401/403)',   severity: '🔴 KRITIS' };
+    if (msg.includes('404') || msg.includes('not found'))       return { emoji: '🔍', label: 'Resource Tidak Ditemukan (404)',   severity: '🟡 SEDANG' };
+
+    // --- FILE & SISTEM ---
+    if (code === 'ENOENT' || msg.includes('no such file'))      return { emoji: '📁', label: 'File Tidak Ditemukan (ENOENT)',    severity: '🟡 SEDANG' };
+    if (code === 'EACCES' || msg.includes('permission denied')) return { emoji: '🚷', label: 'Izin Akses Ditolak (EACCES)',     severity: '🔴 KRITIS' };
+    if (code === 'ENOSPC' || msg.includes('no space'))          return { emoji: '💾', label: 'Disk Penuh (ENOSPC)',              severity: '🔴 KRITIS' };
+    if (msg.includes('out of memory') || msg.includes('heap'))  return { emoji: '🧠', label: 'Kehabisan Memori (OOM)',           severity: '🔴 KRITIS' };
+
+    // --- JAVASCRIPT & RUNTIME ---
+    if (name === 'SyntaxError' || msg.includes('syntax'))       return { emoji: '📝', label: 'Syntax Error',                    severity: '🔴 KRITIS' };
+    if (name === 'TypeError' || msg.includes('is not a function') || msg.includes('cannot read') || msg.includes('undefined')) return { emoji: '🔧', label: 'Type Error (TypeError)',       severity: '🟠 TINGGI' };
+    if (name === 'RangeError' || msg.includes('maximum call') || msg.includes('invalid array length')) return { emoji: '📏', label: 'Range Error',              severity: '🟠 TINGGI' };
+    if (name === 'ReferenceError' || msg.includes('is not defined')) return { emoji: '❓', label: 'Reference Error',            severity: '🟠 TINGGI' };
+
+    // --- DOWNLOADER ---
+    if (msg.includes('tiktok') || msg.includes('tt'))           return { emoji: '🎵', label: 'Gagal Download TikTok',           severity: '🟡 SEDANG' };
+    if (msg.includes('instagram') || msg.includes('ig'))        return { emoji: '📸', label: 'Gagal Download Instagram',        severity: '🟡 SEDANG' };
+    if (msg.includes('youtube') || msg.includes('yt'))          return { emoji: '▶️', label: 'Gagal Download YouTube',          severity: '🟡 SEDANG' };
+
+    // --- WHATSAPP / BAILEYS ---
+    if (msg.includes('not-authorized') || msg.includes('logged out')) return { emoji: '📵', label: 'Sesi WA Expired / Logout',  severity: '🔴 KRITIS' };
+    if (msg.includes('stanza') || msg.includes('stream') || msg.includes('connection'))  return { emoji: '📲', label: 'Error Koneksi WhatsApp',    severity: '🔴 KRITIS' };
+    if (msg.includes('broadcast') || msg.includes('group'))     return { emoji: '👥', label: 'Error Operasi Grup',             severity: '🟡 SEDANG' };
+
+    // --- DEFAULT ---
+    return { emoji: '⚠️', label: 'Error Tidak Diketahui',                                                                       severity: '🟡 SEDANG' };
+}
+
+/**
+ * Membangun teks laporan error lengkap untuk dikirim ke owner.
+ */
+function buildErrorReport({ err, command, args, prefix, jid, pushName, isGroup, from, context = 'PLUGIN' }) {
+    const { emoji, label, severity } = detectErrorType(err);
+    const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false });
+
+    // Potong stack trace menjadi 3 baris teratas saja
+    const stackLines = (err.stack || '').split('\n').slice(0, 4).join('\n');
+
+    return (
+        `🚨 *[${context}] ERROR TERTANGKAP* 🚨\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `${emoji} *Tipe Error:* ${label}\n` +
+        `📊 *Severity:* ${severity}\n` +
+        `🕐 *Waktu:* ${timestamp}\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `👤 *User:* ${pushName || 'Unknown'}\n` +
+        `📱 *Nomor:* ${(jid || '').split('@')[0]}\n` +
+        `👥 *Grup:* ${isGroup ? 'Ya' : 'Tidak'}\n` +
+        `⌨️ *Command:* ${prefix}${command}${args && args.length ? ' ' + args.join(' ') : ''}\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `💬 *Pesan Error:*\n${err.message || '-'}\n\n` +
+        `🗂️ *Stack Trace (3 baris):*\n\`\`\`\n${stackLines || 'Tidak tersedia'}\n\`\`\`\n\n` +
+        `_Laporan otomatis oleh ${config.botName}. Periksa log server untuk detail lengkap._`
+    );
+}
+
 // Memuat semua plugin dari folder src/plugin
 const pluginDir = path.join(__dirname, 'plugin');
 const plugins = {};
@@ -255,21 +338,31 @@ async function messageHandler(sock, rawMsg) {
                 await activePlugin.execute(sock, msg, args);
             } catch (pluginError) {
                 console.error(`[PLUGIN ERROR] ${command}:`, pluginError);
-                
-                // 1. Beri tahu user yang mengalami error
-                await sock.sendMessage(from, { text: '❌ Terjadi kesalahan internal pada fitur ini. Laporan sistem telah dikirimkan ke Owner/Developer agar segera diperbaiki.' }, { quoted: msg });
-                
-                // 2. Kirim laporan detail (Panic Button) ke Owner
+
+                // 1. Beri tahu user
+                const { label } = detectErrorType(pluginError);
+                await sock.sendMessage(from, {
+                    text: `❌ *Terjadi Kesalahan!*\n\n` +
+                          `Jenis: *${label}*\n` +
+                          `Perintah: *${prefix}${command}*\n\n` +
+                          `Laporan otomatis telah dikirim ke owner. Mohon tunggu perbaikan. 🙏`
+                }, { quoted: msg });
+
+                // 2. Kirim laporan lengkap ke Owner
                 try {
-                    const ownerJid = config.ownerNumber + "@s.whatsapp.net";
-                    const errorReport = `🚨 *SISTEM ERROR TERTANGKAP* 🚨\n\n` +
-                                        `*User:* ${pushName || 'Unknown'} (${jid.split('@')[0]})\n` +
-                                        `*Grup:* ${isGroup ? 'Ya' : 'Tidak'}\n` +
-                                        `*Command:* ${prefix}${command} ${args.join(' ')}\n\n` +
-                                        `*Pesan Error:*\n${pluginError.message}\n\n` +
-                                        `_Laporan dikirim otomatis oleh ScravBot. Mohon segera periksa log server._`;
-                    
-                    await sock.sendMessage(ownerJid, { text: errorReport });
+                    const ownerJid = config.ownerNumber + '@s.whatsapp.net';
+                    const report = buildErrorReport({
+                        err: pluginError,
+                        command,
+                        args,
+                        prefix,
+                        jid,
+                        pushName,
+                        isGroup,
+                        from,
+                        context: 'PLUGIN'
+                    });
+                    await sock.sendMessage(ownerJid, { text: report });
                 } catch (reportErr) {
                     console.error('[REPORT ERROR] Gagal mengirim laporan ke owner:', reportErr.message);
                 }
@@ -281,6 +374,22 @@ async function messageHandler(sock, rawMsg) {
 
     } catch (error) {
         customLogger.error(`Terjadi kesalahan pada handler: ${error.message}`);
+        // Laporkan error handler-level ke owner juga
+        try {
+            const ownerJid = config.ownerNumber + '@s.whatsapp.net';
+            const report = buildErrorReport({
+                err: error,
+                command: '(handler-level)',
+                args: [],
+                prefix: config.prefix,
+                jid: '',
+                pushName: 'System',
+                isGroup: false,
+                from: '',
+                context: 'HANDLER'
+            });
+            await sock.sendMessage(ownerJid, { text: report });
+        } catch (_) { /* silent */ }
     }
 }
 
