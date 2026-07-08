@@ -10,7 +10,6 @@ pnpm-debug.log*
 session/
 temp/
 scratch/
-config.js
 
 # Database files
 database.json
