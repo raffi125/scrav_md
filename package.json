@@ -5,6 +5,10 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
+    "pm2:start": "pm2 start src/index.js --name scravbot",
+    "pm2:stop": "pm2 stop scravbot",
+    "pm2:restart": "pm2 restart scravbot",
+    "pm2:log": "pm2 logs scravbot",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
