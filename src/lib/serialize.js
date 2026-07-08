@@ -6,8 +6,26 @@
 function serialize(msg, sock) {
     if (!msg.message) return msg;
 
-    // Ambil kunci pertama (tipe pesan)
-    const type = Object.keys(msg.message)[0];
+    // Normalisasi: unwrap ephemeral / viewOnce / document dengan context
+    let msgContent = msg.message;
+    if (msgContent.ephemeralMessage?.message) {
+        msgContent = msgContent.ephemeralMessage.message;
+    } else if (msgContent.viewOnceMessage?.message) {
+        msgContent = msgContent.viewOnceMessage.message;
+    } else if (msgContent.documentWithCaptionMessage?.message) {
+        msgContent = msgContent.documentWithCaptionMessage.message;
+    }
+
+    // Ambil kunci pertama yang bukan 'messageContextInfo' jika ada
+    const allKeys = Object.keys(msgContent);
+    let type = allKeys[0];
+
+    // Jika key pertama adalah messageContextInfo, cari key konten yang sesungguhnya
+    if (type === 'messageContextInfo') {
+        const contentKey = allKeys.find(k => k !== 'messageContextInfo');
+        if (contentKey) type = contentKey;
+    }
+
     if (!type) return msg;
 
     msg.type = type;
@@ -20,29 +38,26 @@ function serialize(msg, sock) {
 
     // Ekstraksi teks dari berbagai format
     if (type === 'conversation') {
-        body = msg.message.conversation;
+        body = msgContent.conversation || '';
     } else if (type === 'extendedTextMessage') {
-        body = msg.message.extendedTextMessage.text;
+        body = msgContent.extendedTextMessage?.text || '';
     } else if (type === 'imageMessage') {
-        body = msg.message.imageMessage.caption || '';
+        body = msgContent.imageMessage?.caption || '';
     } else if (type === 'videoMessage') {
-        body = msg.message.videoMessage.caption || '';
+        body = msgContent.videoMessage?.caption || '';
+    } else if (type === 'documentMessage') {
+        body = msgContent.documentMessage?.caption || '';
     } else if (type === 'templateButtonReplyMessage') {
-        body = msg.message.templateButtonReplyMessage.selectedId;
+        body = msgContent.templateButtonReplyMessage?.selectedId || '';
     } else if (type === 'listResponseMessage') {
-        body = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
+        body = msgContent.listResponseMessage?.singleSelectReply?.selectedRowId || '';
     } else if (type === 'buttonsResponseMessage') {
-        body = msg.message.buttonsResponseMessage.selectedButtonId;
-    } else if (type === 'messageContextInfo') {
-        // Terkadang ada extra wrapper di WA terbaru
-        const nextType = Object.keys(msg.message)[1];
-        if (nextType && msg.message[nextType]) {
-            if (nextType === 'extendedTextMessage') body = msg.message[nextType].text;
-            if (nextType === 'imageMessage') body = msg.message[nextType].caption;
-        }
+        body = msgContent.buttonsResponseMessage?.selectedButtonId || '';
+    } else if (type === 'interactiveResponseMessage') {
+        body = msgContent.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson || '';
     }
 
-    msg.body = body;
+    msg.body = body || '';
 
     // Helper functions
     if (sock) {

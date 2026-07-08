@@ -107,11 +107,15 @@ async function messageHandler(sock, rawMsg) {
         const prefix = config.prefix;
         // Khusus: jika user hanya mengetik titik tunggal "." (sama persis dengan prefix),
         // jangan anggap sebagai command — langsung balas sebagai auto-respon.
-        if (body.trim() === prefix) {
+        if (body && body.trim() === prefix) {
+            console.log(`[DEBUG] Titik terdeteksi dari ${sender || from}, mengirim auto-respon...`);
             setTimeout(async () => {
                 try {
-                    await sock.sendMessage(from, { text: 'Titik adalah awal dari segalanya. Ketik *!menu* untuk memulai keajaiban! ✨😎' }, { quoted: msg });
-                } catch (err) {}
+                    await sock.sendMessage(from, { text: 'Titik adalah awal dari segalanya. Ketik *.menu* untuk memulai keajaiban! \u2728\ud83d\ude0e' }, { quoted: msg });
+                    console.log(`[DEBUG] Auto-respon titik berhasil dikirim ke ${from}`);
+                } catch (err) {
+                    console.error(`[DEBUG] GAGAL kirim auto-respon titik: ${err.message}`);
+                }
             }, 1000);
             return;
         }
