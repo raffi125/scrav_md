@@ -1,0 +1,30 @@
+{
+  "name": "scrav_md",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.2",
+    "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "axios": "^1.18.1",
+    "brat-canvas": "^1.0.30",
+    "cfonts": "^3.3.1",
+    "chalk": "^4.1.2",
+    "chokidar": "^5.0.0",
+    "form-data": "^4.0.6",
+    "javascript-obfuscator": "^5.4.3",
+    "lru-cache": "^11.5.1",
+    "pino": "^10.3.1",
+    "qs": "^6.15.3",
+    "wa-sticker-formatter": "^4.4.4",
+    "youtube-dl-exec": "^3.1.8"
+  }
+}
