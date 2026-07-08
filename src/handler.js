@@ -105,6 +105,16 @@ async function messageHandler(sock, rawMsg) {
 
         // --- COMMAND ROUTING ---
         const prefix = config.prefix;
+        // Khusus: jika user hanya mengetik titik tunggal "." (sama persis dengan prefix),
+        // jangan anggap sebagai command — langsung balas sebagai auto-respon.
+        if (body.trim() === prefix) {
+            setTimeout(async () => {
+                try {
+                    await sock.sendMessage(from, { text: 'Titik adalah awal dari segalanya. Ketik *!menu* untuk memulai keajaiban! ✨😎' }, { quoted: msg });
+                } catch (err) {}
+            }, 1000);
+            return;
+        }
         const isCmd = body.startsWith(prefix);
         const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '';
         const args = body.trim().split(/ +/).slice(1);
