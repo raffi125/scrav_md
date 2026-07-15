@@ -65,7 +65,11 @@ module.exports = {
                 } catch (e) { console.log('Tegarx YTMP3-2 gagal'); }
             }
 
-            if (!audioUrl) throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil audio YouTube.');
+            if (typeof audioUrl === 'object' && audioUrl !== null) {
+                audioUrl = audioUrl.url || audioUrl.link || audioUrl.download || audioUrl;
+            }
+
+            if (!audioUrl || typeof audioUrl !== 'string') throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil audio YouTube.');
 
             await sock.sendMessage(from, { 
                 audio: { url: audioUrl }, 

@@ -56,7 +56,11 @@ module.exports = {
                 } catch (e) { console.log('Tegarx YTMP4-2 gagal'); }
             }
 
-            if (!videoUrl) throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil video YouTube.');
+            if (typeof videoUrl === 'object' && videoUrl !== null) {
+                videoUrl = videoUrl.url || videoUrl.link || videoUrl.download || videoUrl;
+            }
+
+            if (!videoUrl || typeof videoUrl !== 'string') throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil video YouTube.');
 
             await sock.sendMessage(from, { 
                 video: { url: videoUrl }, 

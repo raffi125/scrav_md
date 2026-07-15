@@ -65,7 +65,11 @@ module.exports = {
                 } catch (e) { console.log('Tegarx TikTok gagal'); }
             }
 
-            if (!videoUrl) throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil video TikTok.');
+            if (typeof videoUrl === 'object' && videoUrl !== null) {
+                videoUrl = videoUrl.url || videoUrl.link || videoUrl.download || videoUrl;
+            }
+
+            if (!videoUrl || typeof videoUrl !== 'string') throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil video TikTok.');
 
             await sock.sendMessage(from, {
                 video: { url: videoUrl },
