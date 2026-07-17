@@ -16,6 +16,7 @@ module.exports = {
         }
 
         const url = args[0];
+        const startTime = Date.now();
         await sock.sendMessage(from, { react: { text: "⏳", key: msg.key } });
 
         try {
@@ -69,9 +70,11 @@ module.exports = {
                 }
             }
 
+            const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+            
             await sock.sendMessage(from, { 
                 video: { url: videoUrl }, 
-                caption: `🎥 *${title}*`
+                caption: `🎥 *${title}*\n⏱️ _Diproses dalam ${duration} detik menggunakan ${sourceName}_`
             }, { quoted: msg });
             await sock.sendMessage(from, { react: { text: "✅", key: msg.key } });
 
