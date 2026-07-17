@@ -87,18 +87,69 @@ module.exports = {
             return;
         }
 
-        // --- SINGLE IMAGE TO PDF ---
+        // --- SINGLE OR AUTO-ALBUM IMAGE TO PDF ---
         let targetMsg = msg.message;
         let targetType = msg.type;
 
         const contextInfo = msg.message[msg.type]?.contextInfo;
+        const isQuoted = !!(contextInfo && contextInfo.quotedMessage);
+
         if (contextInfo && contextInfo.quotedMessage) {
             targetMsg = contextInfo.quotedMessage;
             targetType = Object.keys(targetMsg)[0];
         }
 
+        // DETEKSI ALBUM OTOMATIS (Jika tidak sedang mereply pesan spesifik)
+        if (!isQuoted) {
+            // Tunggu 2 detik untuk memastikan semua gambar album masuk ke cache handler
+            await new Promise(r => setTimeout(r, 2000));
+            const cachedMedia = (global.mediaCache && global.mediaCache[jid]) ? global.mediaCache[jid].filter(x => x.type === 'imageMessage') : [];
+            
+            if (cachedMedia.length > 1) {
+                await msg.react('⏳');
+                await msg.reply(`📸 Mendeteksi ${cachedMedia.length} gambar (Album). Sedang memproses semuanya menjadi 1 PDF...`);
+                try {
+                    const pdfDoc = await PDFDocument.create();
+                    for (const media of cachedMedia) {
+                        try {
+                            const stream = await downloadContentFromMessage(media.msg.message.imageMessage, 'image');
+                            let buffer = Buffer.from([]);
+                            for await(const chunk of stream) {
+                                buffer = Buffer.concat([buffer, chunk]);
+                            }
+                            let img;
+                            try { img = await pdfDoc.embedJpg(buffer); } 
+                            catch (e) { img = await pdfDoc.embedPng(buffer); }
+                            
+                            const { width, height } = img.scale(1);
+                            const page = pdfDoc.addPage([width, height]);
+                            page.drawImage(img, { x: 0, y: 0, width, height });
+                        } catch (err) {
+                            console.error('Gagal embed album:', err);
+                        }
+                    }
+                    const pdfBytes = await pdfDoc.save();
+                    await sock.sendMessage(from, { 
+                        document: Buffer.from(pdfBytes), 
+                        mimetype: 'application/pdf', 
+                        fileName: `Album_${Date.now()}.pdf`
+                    }, { quoted: msg });
+                    await msg.react('✅');
+                } catch (err) {
+                    console.error('topdf album Error:', err);
+                    await msg.reply('❌ Gagal mengonversi album ke PDF.');
+                    await msg.react('❌');
+                }
+                
+                // Bersihkan cache gambar agar tidak ke-proses dua kali
+                global.mediaCache[jid] = global.mediaCache[jid].filter(x => x.type !== 'imageMessage');
+                return;
+            }
+        }
+
+        // SINGLE IMAGE / QUOTED IMAGE
         if (targetType !== 'imageMessage') {
-            await msg.reply('❌ Kirim/reply gambar dengan *!topdf* untuk 1 gambar.\nAtau ketik *!topdf start* untuk multi-gambar.');
+            await msg.reply('❌ Kirim 1 album dengan caption *!topdf* ATAU reply sebuah gambar dengan *!topdf*.');
             return;
         }
 

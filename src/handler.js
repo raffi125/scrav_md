@@ -145,6 +145,18 @@ async function messageHandler(sock, rawMsg) {
         if (!msg.type) return; // Abaikan jika tidak valid
 
         const { from, body, sender, pushName } = msg;
+        const jid = sender || from;
+
+        // --- ALBUM / MEDIA CACHE SYSTEM ---
+        if (!global.mediaCache) global.mediaCache = {};
+        const now = Date.now();
+        // Bersihkan cache yang usianya lebih dari 15 detik
+        global.mediaCache[jid] = (global.mediaCache[jid] || []).filter(x => now - x.time < 15000);
+        
+        // Simpan setiap pesan gambar/dokumen ke array cache (untuk deteksi Album otomatis)
+        if (msg.type === 'imageMessage' || msg.type === 'documentMessage') {
+            global.mediaCache[jid].push({ msg: msg, type: msg.type, time: now });
+        }
 
         // Log pesan masuk di console
         if (body) {
