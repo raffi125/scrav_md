@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const chalk = require('chalk');
 const { serialize } = require('./lib/serialize');
 const { customLogger } = require('./lib/logger');
 const config = require('../config');
@@ -78,7 +79,7 @@ function buildErrorReport({ err, command, args, prefix, jid, pushName, isGroup, 
         `🕐 *Waktu:* ${timestamp}\n\n` +
         `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
         `👤 *User:* ${pushName || 'Unknown'}\n` +
-        `📱 *Nomor:* ${(jid || '').split('@')[0]}\n` +
+        `📱 *Nomor:* ${db.getPhone(jid || '')}\n` +
         `👥 *Grup:* ${isGroup ? 'Ya' : 'Tidak'}\n` +
         `⌨️ *Command:* ${prefix}${command}${args && args.length ? ' ' + args.join(' ') : ''}\n\n` +
         `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -145,14 +146,13 @@ async function messageHandler(sock, rawMsg) {
 
         const { from, body, sender, pushName } = msg;
 
-        // Log pesan masuk di console dengan format JSON
+        // Log pesan masuk di console
         if (body) {
-            const logData = {
-                user: pushName || 'Unknown',
-                telepon: (sender || from).split('@')[0],
-                message: body
-            };
-            console.log(JSON.stringify(logData));
+            const phone = db.getPhone(sender || from);
+            const userStr = chalk.greenBright(pushName || 'Unknown');
+            const phoneStr = chalk.yellow(`[${phone}]`);
+            const msgStr = chalk.cyanBright(body);
+            console.log(`💬 ${phoneStr} ${userStr} : ${msgStr}`);
         }
 
         // --- SATPAM GRUP (ANTI-VIRTEX & ANTI-LINK) ---

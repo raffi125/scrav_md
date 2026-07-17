@@ -2,80 +2,142 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../../config');
 
-const dbPath = path.join(__dirname, '..', '..', 'database.json');
+const dbFolder = path.join(__dirname, '..', '..', 'database', 'users');
+const legacyDbPath = path.join(__dirname, '..', '..', 'database.json');
+const legacyBackupPath = path.join(__dirname, '..', '..', 'database.json.bak');
 
-// Struktur default database
-let db = {
-    users: {}
-};
-
-// Limit gratis harian
 const FREE_LIMIT = 20;
 
+// Buat folder jika belum ada
+if (!fs.existsSync(path.join(__dirname, '..', '..', 'database'))) {
+    fs.mkdirSync(path.join(__dirname, '..', '..', 'database'), { recursive: true });
+}
+if (!fs.existsSync(dbFolder)) {
+    fs.mkdirSync(dbFolder, { recursive: true });
+}
+
 /**
- * Muat database dari file JSON.
+ * Ekstrak nomor asli dari JID (misal: 628123456789@s.whatsapp.net -> 628123456789)
  */
-function loadDatabase() {
-    if (fs.existsSync(dbPath)) {
+function getPhone(jid) {
+    if (!jid) return 'unknown';
+    // Hapus device string seperti :12 dan domain @s.whatsapp.net
+    let number = jid.split('@')[0].split(':')[0];
+    if (number.startsWith('62')) {
+        number = '0' + number.slice(2);
+    }
+    return number;
+}
+
+/**
+ * Ambil file path untuk user tertentu
+ */
+function getUserFilePath(jid) {
+    const phoneNumber = getPhone(jid);
+    return path.join(dbFolder, `${phoneNumber}.json`);
+}
+
+/**
+ * Migrasi dari database.json lama ke sistem per-file
+ */
+function migrateDatabase() {
+    if (fs.existsSync(legacyDbPath)) {
         try {
-            const data = fs.readFileSync(dbPath, 'utf8');
-            db = JSON.parse(data);
-            if (!db.users) db.users = {};
-        } catch (err) {
-            console.error('Gagal memuat database:', err);
-        }
-    } else {
-        saveDatabase();
-    }
-}
-
-/**
- * Simpan database ke file JSON.
- */
-function saveDatabase() {
-    try {
-        fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
-    } catch (err) {
-        console.error('Gagal menyimpan database:', err);
-    }
-}
-
-/**
- * Ambil data user, jika belum ada, buat baru.
- * @param {string} jid ID pengguna (misal 628xxx@s.whatsapp.net)
- */
-function getUser(jid) {
-    if (!db.users[jid]) {
-        db.users[jid] = {
-            limit: FREE_LIMIT,
-            isPremium: false,
-            premiumExpired: null, // timestamp atau 'LIFETIME'
-            isBanned: false,
-            spamCount: 0,
-            lastMessage: 0,
-            uang: 0,
-            xp: 0,
-            level: 1,
-            lastDaily: 0,
-            lastMancing: 0,
-            inventory: {
-                ikan: 0,
-                sampah: 0,
-                box: 0
+            console.log('🔄 Memulai migrasi database lama...');
+            const data = fs.readFileSync(legacyDbPath, 'utf8');
+            const db = JSON.parse(data);
+            
+            if (db.users) {
+                let count = 0;
+                for (const jid in db.users) {
+                    const filePath = getUserFilePath(jid);
+                    // Jangan overwrite jika user sudah punya file baru
+                    if (!fs.existsSync(filePath)) {
+                        fs.writeFileSync(filePath, JSON.stringify(db.users[jid], null, 2));
+                        count++;
+                    }
+                }
+                console.log(`✅ Migrasi selesai: ${count} user dipindahkan.`);
             }
-        };
-        saveDatabase();
+            
+            // Rename file lama sebagai backup
+            fs.renameSync(legacyDbPath, legacyBackupPath);
+            console.log('💾 File database.json lama telah di-backup menjadi database.json.bak');
+        } catch (err) {
+            console.error('❌ Gagal melakukan migrasi database:', err);
+        }
+    }
+}
+
+// Jalankan migrasi saat startup
+migrateDatabase();
+
+/**
+ * Muat data user dari file. Jika belum ada, kembalikan format default.
+ */
+function loadUser(jid) {
+    const filePath = getUserFilePath(jid);
+    if (fs.existsSync(filePath)) {
+        try {
+            const data = fs.readFileSync(filePath, 'utf8');
+            return JSON.parse(data);
+        } catch (err) {
+            console.error(`Gagal memuat data user ${jid}:`, err);
+        }
     }
     
+    // Default user data
+    return {
+        limit: FREE_LIMIT,
+        isPremium: false,
+        premiumExpired: null,
+        isBanned: false,
+        spamCount: 0,
+        lastMessage: 0,
+        uang: 0,
+        xp: 0,
+        level: 1,
+        lastDaily: 0,
+        lastMancing: 0,
+        inventory: {
+            ikan: 0,
+            sampah: 0,
+            box: 0
+        }
+    };
+}
+
+/**
+ * Simpan data user ke file
+ */
+function saveUser(jid, userData) {
+    const filePath = getUserFilePath(jid);
+    try {
+        fs.writeFileSync(filePath, JSON.stringify(userData, null, 2));
+    } catch (err) {
+        console.error(`Gagal menyimpan data user ${jid}:`, err);
+    }
+}
+
+/**
+ * Ambil data user, evaluasi premium.
+ */
+function getUser(jid) {
+    const user = loadUser(jid);
+    
     // Cek apakah premium sudah kadaluarsa
-    const user = db.users[jid];
     if (user.isPremium && user.premiumExpired !== 'LIFETIME') {
         if (Date.now() > user.premiumExpired) {
             user.isPremium = false;
             user.premiumExpired = null;
             user.limit = FREE_LIMIT; // kembalikan ke limit gratis
-            saveDatabase();
+            saveUser(jid, user);
         }
+    }
+
+    // Untuk memastikan file dibuat jika ini user baru
+    if (!fs.existsSync(getUserFilePath(jid))) {
+        saveUser(jid, user);
     }
 
     return user;
@@ -83,19 +145,16 @@ function getUser(jid) {
 
 /**
  * Kurangi limit user jika tidak premium
- * @param {string} jid
- * @returns {boolean} true jika sukses dipotong, false jika limit habis
  */
 function deductLimit(jid) {
-    // Owner kebal dari pemotongan limit (Unlimited)
     if (jid.includes(config.ownerNumber)) return true;
 
     const user = getUser(jid);
-    if (user.isPremium) return true; // Premium tidak dipotong
+    if (user.isPremium) return true;
     
     if (user.limit > 0) {
         user.limit -= 1;
-        saveDatabase();
+        saveUser(jid, user);
         return true;
     }
     return false; // Limit habis
@@ -103,8 +162,6 @@ function deductLimit(jid) {
 
 /**
  * Tambahkan user sebagai premium
- * @param {string} jid 
- * @param {number|string} days jumlah hari, atau 'lifetime'
  */
 function addPremium(jid, days) {
     const user = getUser(jid);
@@ -112,52 +169,49 @@ function addPremium(jid, days) {
     if (days === 'lifetime' || days === 'LIFETIME') {
         user.premiumExpired = 'LIFETIME';
     } else {
-        // Jika sudah premium dan bukan lifetime, tambah harinya
         const now = Date.now();
         const currentExp = (user.premiumExpired && user.premiumExpired !== 'LIFETIME' && user.premiumExpired > now) 
                             ? user.premiumExpired 
                             : now;
         user.premiumExpired = currentExp + (parseInt(days) * 24 * 60 * 60 * 1000);
     }
-    // Jika premium, limitnya bisa di-set ke Infinity atau biarkan saja karena dicek `isPremium`
-    saveDatabase();
+    saveUser(jid, user);
 }
 
 /**
  * Cabut status premium user
- * @param {string} jid 
  */
 function delPremium(jid) {
     const user = getUser(jid);
     user.isPremium = false;
     user.premiumExpired = null;
     user.limit = FREE_LIMIT;
-    saveDatabase();
+    saveUser(jid, user);
 }
 
 /**
- * Reset limit semua user gratis setiap hari jam 00:00 (bisa dipanggil via cron)
+ * Reset limit semua user gratis setiap hari
  */
 function resetAllLimits() {
-    for (const jid in db.users) {
-        const user = db.users[jid];
-        if (!user.isPremium) {
-            user.limit = FREE_LIMIT;
+    if (!fs.existsSync(dbFolder)) return;
+    
+    const files = fs.readdirSync(dbFolder);
+    for (const file of files) {
+        if (file.endsWith('.json')) {
+            const jid = file.replace('.json', '') + '@s.whatsapp.net';
+            const user = loadUser(jid);
+            if (!user.isPremium) {
+                user.limit = FREE_LIMIT;
+                saveUser(jid, user);
+            }
         }
     }
-    saveDatabase();
 }
 
-// Muat database di awal
-loadDatabase();
-
 /**
- * Tangani Anti-Spam (Mencatat Waktu dan Banned Otomatis)
- * @param {string} jid 
- * @returns {boolean} true jika Banned, false jika Aman
+ * Tangani Anti-Spam
  */
 function handleAntiSpam(jid) {
-    // Owner kebal dari sistem Anti-Spam (Banned Otomatis)
     if (jid.includes(config.ownerNumber)) return false;
 
     const user = getUser(jid);
@@ -167,34 +221,29 @@ function handleAntiSpam(jid) {
     const timeDiff = now - user.lastMessage;
 
     if (timeDiff < 2000) {
-        // Jika nge-chat command lagi dalam kurang dari 2 detik
         user.spamCount += 1;
-        
-        // Jika nyepam 4 kali berturut-turut, ban.
         if (user.spamCount >= 4) {
             user.isBanned = true;
-            saveDatabase();
+            saveUser(jid, user);
             return true;
         }
     } else {
-        // Aman, reset spam count
         user.spamCount = 0;
     }
 
     user.lastMessage = now;
-    saveDatabase();
+    saveUser(jid, user);
     return false;
 }
 
 /**
  * Bebaskan user dari Banned
- * @param {string} jid 
  */
 function unbanUser(jid) {
     const user = getUser(jid);
     user.isBanned = false;
     user.spamCount = 0;
-    saveDatabase();
+    saveUser(jid, user);
 }
 
 module.exports = {
@@ -205,5 +254,6 @@ module.exports = {
     resetAllLimits,
     handleAntiSpam,
     unbanUser,
-    FREE_LIMIT
+    FREE_LIMIT,
+    getPhone
 };
