@@ -42,7 +42,20 @@ module.exports = {
                 (async () => {
                     const info = await youtubedl(url, { dumpSingleJson: true, noWarnings: true, noCheckCertificates: true, format: 'bestaudio' });
                     if (!info || !info.url) throw new Error('Local yt-dlp failed to get URL');
-                    return { url: info.url, title: info.title, source: 'Local yt-dlp' };
+                    
+                    const buffer = await new Promise((resolve, reject) => {
+                        const { spawn } = require('child_process');
+                        const ffmpeg = spawn('ffmpeg', ['-i', info.url, '-vn', '-acodec', 'libmp3lame', '-b:a', '128k', '-f', 'mp3', 'pipe:1']);
+                        const chunks = [];
+                        ffmpeg.stdout.on('data', chunk => chunks.push(chunk));
+                        ffmpeg.on('close', code => {
+                            if (code === 0) resolve(Buffer.concat(chunks));
+                            else reject(new Error('FFMPEG exited with code ' + code));
+                        });
+                        ffmpeg.on('error', err => reject(err));
+                    });
+
+                    return { url: buffer, title: info.title, source: 'Local yt-dlp' };
                 })().catch(e => { console.log('Local yt-dlp gagal:', e.message || e); throw e; }),
                 fetchApi(() => ScravBotApi.harz.ytmp3(url), 'Harz YTMP3'),
                 fetchApi(() => ScravBotApi.harz.ytdlV4(url), 'Harz YTDL V4'),
@@ -60,8 +73,10 @@ module.exports = {
                 throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil audio YouTube.');
             }
 
+            const audioPayload = Buffer.isBuffer(audioUrl) ? audioUrl : { url: audioUrl };
+
             await sock.sendMessage(from, { 
-                audio: { url: audioUrl }, 
+                audio: audioPayload, 
                 mimetype: 'audio/mp4',
                 ptt: false
             }, { quoted: msg });
