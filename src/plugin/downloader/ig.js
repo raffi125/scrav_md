@@ -23,7 +23,7 @@ module.exports = {
 
             const fetchApi = async (apiCall, sourceName) => {
                 try {
-                    const res = await apiCall(url);
+                    const res = await apiCall();
                     const data = res?.data || res?.result;
                     let mediaUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
                     if (typeof mediaUrl === 'object' && mediaUrl !== null) {
@@ -38,11 +38,11 @@ module.exports = {
             };
 
             const promises = [
-                fetchApi(ScravBotApi.tegarx.igReels, 'Tegarx IG Reels'),
-                fetchApi(ScravBotApi.tegarx.instagram, 'Tegarx IG'),
-                fetchApi(ScravBotApi.harz.igV4, 'Harz IG V4'),
-                fetchApi(ScravBotApi.harz.igV3, 'Harz IG V3'),
-                fetchApi(ScravBotApi.harz.igV2, 'Harz IG V2')
+                fetchApi(() => ScravBotApi.tegarx.igReels(url), 'Tegarx IG Reels'),
+                fetchApi(() => ScravBotApi.tegarx.instagram(url), 'Tegarx IG'),
+                fetchApi(() => ScravBotApi.harz.igV4(url), 'Harz IG V4'),
+                fetchApi(() => ScravBotApi.harz.igV3(url), 'Harz IG V3'),
+                fetchApi(() => ScravBotApi.harz.igV2(url), 'Harz IG V2')
             ];
 
             try {

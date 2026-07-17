@@ -23,7 +23,7 @@ module.exports = {
 
             const fetchApi = async (apiCall, sourceName) => {
                 try {
-                    const res = await apiCall(url);
+                    const res = await apiCall();
                     const data = res?.data || res?.result;
                     let mediaUrl = data?.audio || data?.mp3 || data?.url;
                     if (typeof mediaUrl === 'object' && mediaUrl !== null) {
@@ -38,11 +38,11 @@ module.exports = {
             };
 
             const promises = [
-                fetchApi(ScravBotApi.harz.ytmp3, 'Harz YTMP3'),
-                fetchApi(ScravBotApi.harz.ytdlV4, 'Harz YTDL V4'),
-                fetchApi(ScravBotApi.harz.ytdlV3, 'Harz YTDL V3'),
-                fetchApi(ScravBotApi.tegarx.ytmp3, 'Tegarx YTMP3'),
-                fetchApi(ScravBotApi.tegarx.ytmp3v2, 'Tegarx YTMP3-2')
+                fetchApi(() => ScravBotApi.harz.ytmp3(url), 'Harz YTMP3'),
+                fetchApi(() => ScravBotApi.harz.ytdlV4(url), 'Harz YTDL V4'),
+                fetchApi(() => ScravBotApi.harz.ytdlV3(url), 'Harz YTDL V3'),
+                fetchApi(() => ScravBotApi.tegarx.ytmp3(url), 'Tegarx YTMP3'),
+                fetchApi(() => ScravBotApi.tegarx.ytmp3v2(url), 'Tegarx YTMP3-2')
             ];
 
             try {

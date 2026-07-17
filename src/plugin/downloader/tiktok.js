@@ -23,7 +23,7 @@ module.exports = {
 
             const fetchApi = async (apiCall, sourceName) => {
                 try {
-                    const res = await apiCall(url);
+                    const res = await apiCall();
                     const data = res?.data || res?.result;
                     let mediaUrl = data?.no_watermark || data?.video || data?.url;
                     if (typeof mediaUrl === 'object' && mediaUrl !== null) {
@@ -38,11 +38,11 @@ module.exports = {
             };
 
             const promises = [
-                fetchApi(ScravBotApi.harz.tiktokV4, 'Harz TikTok V4'),
-                fetchApi(ScravBotApi.harz.tiktokV3, 'Harz TikTok V3'),
-                fetchApi(ScravBotApi.harz.tiktokV2, 'Harz TikTok V2'),
-                fetchApi(ScravBotApi.harz.tiktok, 'Harz TikTok'),
-                fetchApi(ScravBotApi.tegarx.tiktok, 'TegarX TikTok')
+                fetchApi(() => ScravBotApi.harz.tiktokV4(url), 'Harz TikTok V4'),
+                fetchApi(() => ScravBotApi.harz.tiktokV3(url), 'Harz TikTok V3'),
+                fetchApi(() => ScravBotApi.harz.tiktokV2(url), 'Harz TikTok V2'),
+                fetchApi(() => ScravBotApi.harz.tiktok(url), 'Harz TikTok'),
+                fetchApi(() => ScravBotApi.tegarx.tiktok(url), 'TegarX TikTok')
             ];
 
             try {
