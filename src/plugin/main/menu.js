@@ -101,10 +101,19 @@ module.exports = {
             }
             
             if (this.cachedBanner) {
-                // Kirim menu dengan gambar lokal
+                // Kirim menu menggunakan externalAdReply (jauh lebih cepat daripada upload full image)
                 await sock.sendMessage(from, { 
-                    image: this.cachedBanner, 
-                    caption: menuText 
+                    text: menuText,
+                    contextInfo: {
+                        externalAdReply: {
+                            title: `👑 ${botName} PREMIUM 👑`,
+                            body: 'Pilih menu di bawah ini',
+                            thumbnail: this.cachedBanner,
+                            sourceUrl: "https://github.com/itsliaaa/baileys", // Mencontek dari referensi
+                            mediaType: 1,
+                            renderLargerThumbnail: true
+                        }
+                    }
                 }, { quoted: msg });
             } else {
                 // Jika file gambar belum dimasukkan oleh owner, cukup kirim teks saja tanpa error

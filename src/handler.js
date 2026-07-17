@@ -209,23 +209,40 @@ async function messageHandler(sock, rawMsg) {
         const jid = sender || from;
         const session = require('./lib/session');
 
-        // --- INTERCEPT PESAN BIASA UNTUK CHAT RAHASIA ---
-        if (!isCmd && body) {
-            // Jika dalam sesi Menfess
-            if (session.menfess[jid]) {
-                const partner = session.menfess[jid];
-                await sock.sendMessage(partner, { text: `💌 *Pesan Masuk:*\n\n${body}` });
-                return; // Berhenti agar tidak diproses sebagai command
+        // --- INTERCEPT PESAN BIASA UNTUK CHAT RAHASIA & SESI ---
+        if (!isCmd) {
+            // Jika dalam sesi topdf
+            if (session.topdf && session.topdf[jid]) {
+                if (plugins['topdf'] && typeof plugins['topdf'].handleSession === 'function') {
+                    await plugins['topdf'].handleSession(sock, msg, session.topdf[jid]);
+                    return;
+                }
             }
             
-            // Jika dalam sesi Anonymous Chat
-            if (session.anonymous.chat[jid]) {
-                const partner = session.anonymous.chat[jid];
-                await sock.sendMessage(partner, { text: `👤 *Stranger:*\n${body}` });
-                return; // Berhenti
+            // Jika dalam sesi mergepdf
+            if (session.mergepdf && session.mergepdf[jid]) {
+                if (plugins['mergepdf'] && typeof plugins['mergepdf'].handleSession === 'function') {
+                    await plugins['mergepdf'].handleSession(sock, msg, session.mergepdf[jid]);
+                    return;
+                }
             }
 
-            // --- AUTO-DOWNLOADER (TIKTOK, IG, YOUTUBE) ---
+            if (body) {
+                // Jika dalam sesi Menfess
+                if (session.menfess[jid]) {
+                    const partner = session.menfess[jid];
+                    await sock.sendMessage(partner, { text: `💌 *Pesan Masuk:*\n\n${body}` });
+                    return; // Berhenti agar tidak diproses sebagai command
+                }
+                
+                // Jika dalam sesi Anonymous Chat
+                if (session.anonymous.chat[jid]) {
+                    const partner = session.anonymous.chat[jid];
+                    await sock.sendMessage(partner, { text: `👤 *Stranger:*\n${body}` });
+                    return; // Berhenti
+                }
+
+                // --- AUTO-DOWNLOADER (TIKTOK, IG, YOUTUBE) ---
             const tiktokRegex = /https?:\/\/(?:www\.|vt\.|vm\.)?tiktok\.com\/[^\s]+/i;
             const igRegex = /https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[^\s]+/i;
             const ytRegex = /https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[^\s]+/i;
@@ -295,7 +312,8 @@ async function messageHandler(sock, rawMsg) {
                     if (textLower === '.') return; // Hentikan proses routing command jika hanya ngetik titik
                 }
             }
-        }
+        } // Penutup if (body)
+        } // Penutup if (!isCmd)
 
         if (!isCmd) return; // Hanya merespons command ber-prefix
 
