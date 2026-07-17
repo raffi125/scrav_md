@@ -20,45 +20,45 @@ function detectErrorType(err) {
     const name = err.name || '';
 
     // --- NETWORK & KONEKSI ---
-    if (code === 'ECONNRESET' || msg.includes('econnreset'))     return { emoji: '🔌', label: 'Koneksi Terputus (ECONNRESET)',   severity: '🔴 KRITIS' };
-    if (code === 'ENOTFOUND' || msg.includes('enotfound'))       return { emoji: '🌐', label: 'DNS / Host Tidak Ditemukan',       severity: '🔴 KRITIS' };
-    if (code === 'ETIMEDOUT' || msg.includes('etimedout'))       return { emoji: '⏱️', label: 'Koneksi Timeout (ETIMEDOUT)',      severity: '🟠 TINGGI' };
-    if (code === 'ECONNREFUSED' || msg.includes('econnrefused')) return { emoji: '🚫', label: 'Koneksi Ditolak (ECONNREFUSED)',   severity: '🟠 TINGGI' };
-    if (msg.includes('timeout') || msg.includes('timed out'))   return { emoji: '⏰', label: 'Request Timeout',                  severity: '🟠 TINGGI' };
-    if (msg.includes('fetch') || msg.includes('network'))       return { emoji: '📡', label: 'Gagal Fetch / Network Error',      severity: '🟠 TINGGI' };
-    if (msg.includes('socket hang up') || msg.includes('socket')) return { emoji: '🔗', label: 'Socket Hang Up',                severity: '🟠 TINGGI' };
+    if (code === 'ECONNRESET' || msg.includes('econnreset')) return { emoji: '🔌', label: 'Koneksi Terputus (ECONNRESET)', severity: '🔴 KRITIS' };
+    if (code === 'ENOTFOUND' || msg.includes('enotfound')) return { emoji: '🌐', label: 'DNS / Host Tidak Ditemukan', severity: '🔴 KRITIS' };
+    if (code === 'ETIMEDOUT' || msg.includes('etimedout')) return { emoji: '⏱️', label: 'Koneksi Timeout (ETIMEDOUT)', severity: '🟠 TINGGI' };
+    if (code === 'ECONNREFUSED' || msg.includes('econnrefused')) return { emoji: '🚫', label: 'Koneksi Ditolak (ECONNREFUSED)', severity: '🟠 TINGGI' };
+    if (msg.includes('timeout') || msg.includes('timed out')) return { emoji: '⏰', label: 'Request Timeout', severity: '🟠 TINGGI' };
+    if (msg.includes('fetch') || msg.includes('network')) return { emoji: '📡', label: 'Gagal Fetch / Network Error', severity: '🟠 TINGGI' };
+    if (msg.includes('socket hang up') || msg.includes('socket')) return { emoji: '🔗', label: 'Socket Hang Up', severity: '🟠 TINGGI' };
 
     // --- API EKSTERNAL ---
-    if (msg.includes('rate limit') || msg.includes('too many request')) return { emoji: '🚦', label: 'Rate Limit API (429)',      severity: '🟡 SEDANG' };
-    if (msg.includes('api') && (msg.includes('invalid') || msg.includes('key') || msg.includes('token'))) return { emoji: '🔑', label: 'API Key Tidak Valid',      severity: '🔴 KRITIS' };
-    if (msg.includes('api') || msg.includes('status 5') || msg.includes('500') || msg.includes('502') || msg.includes('503')) return { emoji: '🌩️', label: 'Server API Error (5xx)',    severity: '🟠 TINGGI' };
-    if (msg.includes('401') || msg.includes('403') || msg.includes('unauthorized') || msg.includes('forbidden')) return { emoji: '🔒', label: 'Akses Ditolak (401/403)',   severity: '🔴 KRITIS' };
-    if (msg.includes('404') || msg.includes('not found'))       return { emoji: '🔍', label: 'Resource Tidak Ditemukan (404)',   severity: '🟡 SEDANG' };
+    if (msg.includes('rate limit') || msg.includes('too many request')) return { emoji: '🚦', label: 'Rate Limit API (429)', severity: '🟡 SEDANG' };
+    if (msg.includes('api') && (msg.includes('invalid') || msg.includes('key') || msg.includes('token'))) return { emoji: '🔑', label: 'API Key Tidak Valid', severity: '🔴 KRITIS' };
+    if (msg.includes('api') || msg.includes('status 5') || msg.includes('500') || msg.includes('502') || msg.includes('503')) return { emoji: '🌩️', label: 'Server API Error (5xx)', severity: '🟠 TINGGI' };
+    if (msg.includes('401') || msg.includes('403') || msg.includes('unauthorized') || msg.includes('forbidden')) return { emoji: '🔒', label: 'Akses Ditolak (401/403)', severity: '🔴 KRITIS' };
+    if (msg.includes('404') || msg.includes('not found')) return { emoji: '🔍', label: 'Resource Tidak Ditemukan (404)', severity: '🟡 SEDANG' };
 
     // --- FILE & SISTEM ---
-    if (code === 'ENOENT' || msg.includes('no such file'))      return { emoji: '📁', label: 'File Tidak Ditemukan (ENOENT)',    severity: '🟡 SEDANG' };
-    if (code === 'EACCES' || msg.includes('permission denied')) return { emoji: '🚷', label: 'Izin Akses Ditolak (EACCES)',     severity: '🔴 KRITIS' };
-    if (code === 'ENOSPC' || msg.includes('no space'))          return { emoji: '💾', label: 'Disk Penuh (ENOSPC)',              severity: '🔴 KRITIS' };
-    if (msg.includes('out of memory') || msg.includes('heap'))  return { emoji: '🧠', label: 'Kehabisan Memori (OOM)',           severity: '🔴 KRITIS' };
+    if (code === 'ENOENT' || msg.includes('no such file')) return { emoji: '📁', label: 'File Tidak Ditemukan (ENOENT)', severity: '🟡 SEDANG' };
+    if (code === 'EACCES' || msg.includes('permission denied')) return { emoji: '🚷', label: 'Izin Akses Ditolak (EACCES)', severity: '🔴 KRITIS' };
+    if (code === 'ENOSPC' || msg.includes('no space')) return { emoji: '💾', label: 'Disk Penuh (ENOSPC)', severity: '🔴 KRITIS' };
+    if (msg.includes('out of memory') || msg.includes('heap')) return { emoji: '🧠', label: 'Kehabisan Memori (OOM)', severity: '🔴 KRITIS' };
 
     // --- JAVASCRIPT & RUNTIME ---
-    if (name === 'SyntaxError' || msg.includes('syntax'))       return { emoji: '📝', label: 'Syntax Error',                    severity: '🔴 KRITIS' };
-    if (name === 'TypeError' || msg.includes('is not a function') || msg.includes('cannot read') || msg.includes('undefined')) return { emoji: '🔧', label: 'Type Error (TypeError)',       severity: '🟠 TINGGI' };
-    if (name === 'RangeError' || msg.includes('maximum call') || msg.includes('invalid array length')) return { emoji: '📏', label: 'Range Error',              severity: '🟠 TINGGI' };
-    if (name === 'ReferenceError' || msg.includes('is not defined')) return { emoji: '❓', label: 'Reference Error',            severity: '🟠 TINGGI' };
+    if (name === 'SyntaxError' || msg.includes('syntax')) return { emoji: '📝', label: 'Syntax Error', severity: '🔴 KRITIS' };
+    if (name === 'TypeError' || msg.includes('is not a function') || msg.includes('cannot read') || msg.includes('undefined')) return { emoji: '🔧', label: 'Type Error (TypeError)', severity: '🟠 TINGGI' };
+    if (name === 'RangeError' || msg.includes('maximum call') || msg.includes('invalid array length')) return { emoji: '📏', label: 'Range Error', severity: '🟠 TINGGI' };
+    if (name === 'ReferenceError' || msg.includes('is not defined')) return { emoji: '❓', label: 'Reference Error', severity: '🟠 TINGGI' };
 
     // --- DOWNLOADER ---
-    if (msg.includes('tiktok') || msg.includes('tt'))           return { emoji: '🎵', label: 'Gagal Download TikTok',           severity: '🟡 SEDANG' };
-    if (msg.includes('instagram') || msg.includes('ig'))        return { emoji: '📸', label: 'Gagal Download Instagram',        severity: '🟡 SEDANG' };
-    if (msg.includes('youtube') || msg.includes('yt'))          return { emoji: '▶️', label: 'Gagal Download YouTube',          severity: '🟡 SEDANG' };
+    if (msg.includes('tiktok') || msg.includes('tt')) return { emoji: '🎵', label: 'Gagal Download TikTok', severity: '🟡 SEDANG' };
+    if (msg.includes('instagram') || msg.includes('ig')) return { emoji: '📸', label: 'Gagal Download Instagram', severity: '🟡 SEDANG' };
+    if (msg.includes('youtube') || msg.includes('yt')) return { emoji: '▶️', label: 'Gagal Download YouTube', severity: '🟡 SEDANG' };
 
     // --- WHATSAPP / BAILEYS ---
-    if (msg.includes('not-authorized') || msg.includes('logged out')) return { emoji: '📵', label: 'Sesi WA Expired / Logout',  severity: '🔴 KRITIS' };
-    if (msg.includes('stanza') || msg.includes('stream') || msg.includes('connection'))  return { emoji: '📲', label: 'Error Koneksi WhatsApp',    severity: '🔴 KRITIS' };
-    if (msg.includes('broadcast') || msg.includes('group'))     return { emoji: '👥', label: 'Error Operasi Grup',             severity: '🟡 SEDANG' };
+    if (msg.includes('not-authorized') || msg.includes('logged out')) return { emoji: '📵', label: 'Sesi WA Expired / Logout', severity: '🔴 KRITIS' };
+    if (msg.includes('stanza') || msg.includes('stream') || msg.includes('connection')) return { emoji: '📲', label: 'Error Koneksi WhatsApp', severity: '🔴 KRITIS' };
+    if (msg.includes('broadcast') || msg.includes('group')) return { emoji: '👥', label: 'Error Operasi Grup', severity: '🟡 SEDANG' };
 
     // --- DEFAULT ---
-    return { emoji: '⚠️', label: 'Error Tidak Diketahui',                                                                       severity: '🟡 SEDANG' };
+    return { emoji: '⚠️', label: 'Error Tidak Diketahui', severity: '🟡 SEDANG' };
 }
 
 /**
@@ -113,7 +113,7 @@ function loadPlugins() {
     }
 
     const files = getFiles(pluginDir);
-    
+
     let loadedCount = 0;
     for (const file of files) {
         const commandName = path.basename(file, '.js');
@@ -126,7 +126,7 @@ function loadPlugins() {
             customLogger.error(`Gagal memuat plugin ${path.basename(file)}: ${error.message}`);
         }
     }
-    
+
     if (loadedCount > 0) {
         customLogger.plugin(`Berhasil memuat total ${loadedCount} plugin`);
     }
@@ -152,7 +152,7 @@ async function messageHandler(sock, rawMsg) {
         const now = Date.now();
         // Bersihkan cache yang usianya lebih dari 15 detik
         global.mediaCache[jid] = (global.mediaCache[jid] || []).filter(x => now - x.time < 15000);
-        
+
         // Simpan setiap pesan gambar/dokumen ke array cache (untuk deteksi Album otomatis)
         if (msg.type === 'imageMessage' || msg.type === 'documentMessage') {
             global.mediaCache[jid].push({ msg: msg, type: msg.type, time: now });
@@ -170,7 +170,7 @@ async function messageHandler(sock, rawMsg) {
         // --- SATPAM GRUP (ANTI-VIRTEX & ANTI-LINK) ---
         const isGroup = from.endsWith('@g.us');
         let isAdmins = false;
-        
+
         if (isGroup) {
             try {
                 const groupMetadata = await sock.groupMetadata(from);
@@ -180,7 +180,7 @@ async function messageHandler(sock, rawMsg) {
             } catch (err) {
                 // Abaikan error jika metadata gagal diambil
             }
-            
+
             // ANTI-VIRTEX
             if (body && body.length > 5000 && !isAdmins) {
                 console.log(`[SATPAM] Menendang pengirim VIRTEX: ${sender}`);
@@ -217,8 +217,8 @@ async function messageHandler(sock, rawMsg) {
         const isCmd = body.startsWith(prefix);
         const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : '';
         const args = body.trim().split(/ +/).slice(1);
-        
-        const jid = sender || from;
+
+        //const jid = sender || from;
         const session = require('./lib/session');
 
         // --- INTERCEPT PESAN BIASA UNTUK CHAT RAHASIA & SESI ---
@@ -230,7 +230,7 @@ async function messageHandler(sock, rawMsg) {
                     return;
                 }
             }
-            
+
             // Jika dalam sesi mergepdf
             if (session.mergepdf && session.mergepdf[jid]) {
                 if (plugins['mergepdf'] && typeof plugins['mergepdf'].handleSession === 'function') {
@@ -246,7 +246,7 @@ async function messageHandler(sock, rawMsg) {
                     await sock.sendMessage(partner, { text: `💌 *Pesan Masuk:*\n\n${body}` });
                     return; // Berhenti agar tidak diproses sebagai command
                 }
-                
+
                 // Jika dalam sesi Anonymous Chat
                 if (session.anonymous.chat[jid]) {
                     const partner = session.anonymous.chat[jid];
@@ -255,76 +255,76 @@ async function messageHandler(sock, rawMsg) {
                 }
 
                 // --- AUTO-DOWNLOADER (TIKTOK, IG, YOUTUBE) ---
-            const tiktokRegex = /https?:\/\/(?:www\.|vt\.|vm\.)?tiktok\.com\/[^\s]+/i;
-            const igRegex = /https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[^\s]+/i;
-            const ytRegex = /https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[^\s]+/i;
+                const tiktokRegex = /https?:\/\/(?:www\.|vt\.|vm\.)?tiktok\.com\/[^\s]+/i;
+                const igRegex = /https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[^\s]+/i;
+                const ytRegex = /https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[^\s]+/i;
 
-            let dlUrl = null;
-            let dlPluginName = null;
+                let dlUrl = null;
+                let dlPluginName = null;
 
-            if (tiktokRegex.test(body)) {
-                dlUrl = body.match(tiktokRegex)[0];
-                dlPluginName = 'tiktok';
-            } else if (igRegex.test(body)) {
-                dlUrl = body.match(igRegex)[0];
-                dlPluginName = 'ig';
-            } else if (ytRegex.test(body)) {
-                dlUrl = body.match(ytRegex)[0];
-                dlPluginName = 'yt';
-            }
-
-            if (dlUrl && plugins[dlPluginName]) {
-                // Potong limit secara silent (tanpa ngomel kalau habis)
-                const canExecute = db.deductLimit(jid);
-                if (canExecute) {
-                    console.log(`[AUTO-DL] Mendownload ${dlPluginName} dari link: ${dlUrl}`);
-                    // Kita bisa menandakan pesan sedang di-react agar user tahu bot sedang bekerja
-                    await sock.sendMessage(from, { react: { text: "⏳", key: msg.key } });
-                    // Eksekusi plugin aslinya dengan menyisipkan URL ke dalam args
-                    try {
-                        await plugins[dlPluginName].execute(sock, msg, [dlUrl]);
-                    } catch (err) {
-                        console.error(`[AUTO-DL] Error: ${err.message}`);
-                    }
-                } else {
-                    console.log(`[AUTO-DL] Batal mendownload karena Limit JID ${jid} habis.`);
+                if (tiktokRegex.test(body)) {
+                    dlUrl = body.match(tiktokRegex)[0];
+                    dlPluginName = 'tiktok';
+                } else if (igRegex.test(body)) {
+                    dlUrl = body.match(igRegex)[0];
+                    dlPluginName = 'ig';
+                } else if (ytRegex.test(body)) {
+                    dlUrl = body.match(ytRegex)[0];
+                    dlPluginName = 'yt';
                 }
-            }
 
-            // --- AUTO-RESPON TEKS SEDERHANA (TANPA AI) ---
-            const textLower = body.toLowerCase().trim();
-            
-            // Izinkan auto-respon memproses titik (.) meskipun diawali dengan prefix command
-            if ((!isCmd || textLower === '.') && !dlUrl) {
-                
-                // Kumpulan kata kunci dan balasannya
-                const autoResponses = {
-                    '.': 'Titik adalah awal dari segalanya. Ketik *!menu* untuk memulai keajaiban! ✨😎',
-                    'p': 'Uy, kenapa tuh? Ketik *!menu* untuk lihat fitur bot ya.',
-                    'halo': 'Halo juga kak! Ketik *!menu* untuk mulai.',
-                    'bot': 'Dalem kak, ada yang bisa dibantu? Ketik *!menu* ya.',
-                    'assalamualaikum': 'Waalaikumsalam wr. wb. 🙏',
-                    'pagi': 'Pagi juga kak! Semangat jalani hari ini! 🔥',
-                    'siang': 'Siang kak! Jangan lupa makan ya. 🍽️',
-                    'sore': 'Sore kak! Waktunya santai sebentar. ☕',
-                    'malam': 'Malam juga! Jangan lupa istirahat ya. 😴',
-                    'test': 'Bot aktif kak! Ketik *!menu* untuk menggunakan fitur.',
-                    'tes': 'Bot aktif kak! Ketik *!menu* untuk menggunakan fitur.'
-                };
-
-                // Jika pesan cocok persis dengan kata kunci
-                if (autoResponses[textLower]) {
-                    // Balas dengan jeda 1 detik agar natural
-                    setTimeout(async () => {
+                if (dlUrl && plugins[dlPluginName]) {
+                    // Potong limit secara silent (tanpa ngomel kalau habis)
+                    const canExecute = db.deductLimit(jid);
+                    if (canExecute) {
+                        console.log(`[AUTO-DL] Mendownload ${dlPluginName} dari link: ${dlUrl}`);
+                        // Kita bisa menandakan pesan sedang di-react agar user tahu bot sedang bekerja
+                        await sock.sendMessage(from, { react: { text: "⏳", key: msg.key } });
+                        // Eksekusi plugin aslinya dengan menyisipkan URL ke dalam args
                         try {
-                            await sock.sendMessage(from, { text: autoResponses[textLower] }, { quoted: msg });
-                        } catch (err) {}
-                    }, 1000);
-                    
-                    if (textLower === '.') return; // Hentikan proses routing command jika hanya ngetik titik
+                            await plugins[dlPluginName].execute(sock, msg, [dlUrl]);
+                        } catch (err) {
+                            console.error(`[AUTO-DL] Error: ${err.message}`);
+                        }
+                    } else {
+                        console.log(`[AUTO-DL] Batal mendownload karena Limit JID ${jid} habis.`);
+                    }
                 }
-            }
-        } // Penutup if (body)
+
+                // --- AUTO-RESPON TEKS SEDERHANA (TANPA AI) ---
+                const textLower = body.toLowerCase().trim();
+
+                // Izinkan auto-respon memproses titik (.) meskipun diawali dengan prefix command
+                if ((!isCmd || textLower === '.') && !dlUrl) {
+
+                    // Kumpulan kata kunci dan balasannya
+                    const autoResponses = {
+                        '.': 'Titik adalah awal dari segalanya. Ketik *!menu* untuk memulai keajaiban! ✨😎',
+                        'p': 'Uy, kenapa tuh? Ketik *!menu* untuk lihat fitur bot ya.',
+                        'halo': 'Halo juga kak! Ketik *!menu* untuk mulai.',
+                        'bot': 'Dalem kak, ada yang bisa dibantu? Ketik *!menu* ya.',
+                        'assalamualaikum': 'Waalaikumsalam wr. wb. 🙏',
+                        'pagi': 'Pagi juga kak! Semangat jalani hari ini! 🔥',
+                        'siang': 'Siang kak! Jangan lupa makan ya. 🍽️',
+                        'sore': 'Sore kak! Waktunya santai sebentar. ☕',
+                        'malam': 'Malam juga! Jangan lupa istirahat ya. 😴',
+                        'test': 'Bot aktif kak! Ketik *!menu* untuk menggunakan fitur.',
+                        'tes': 'Bot aktif kak! Ketik *!menu* untuk menggunakan fitur.'
+                    };
+
+                    // Jika pesan cocok persis dengan kata kunci
+                    if (autoResponses[textLower]) {
+                        // Balas dengan jeda 1 detik agar natural
+                        setTimeout(async () => {
+                            try {
+                                await sock.sendMessage(from, { text: autoResponses[textLower] }, { quoted: msg });
+                            } catch (err) { }
+                        }, 1000);
+
+                        if (textLower === '.') return; // Hentikan proses routing command jika hanya ngetik titik
+                    }
+                }
+            } // Penutup if (body)
         } // Penutup if (!isCmd)
 
         if (!isCmd) return; // Hanya merespons command ber-prefix
@@ -338,7 +338,7 @@ async function messageHandler(sock, rawMsg) {
 
         // Cek apakah plugin/command tersebut ada, atau merupakan alias
         let activePlugin = plugins[command];
-        
+
         if (!activePlugin) {
             // Cari dari daftar alias
             for (const key in plugins) {
@@ -353,17 +353,16 @@ async function messageHandler(sock, rawMsg) {
             // Cek apakah plugin ini membutuhkan limit
             if (activePlugin.limit) {
                 // Sender format: 628xxx@s.whatsapp.net
-                const jid = sender || from;
                 const canExecute = db.deductLimit(jid);
-                
+
                 if (!canExecute) {
-                    await sock.sendMessage(from, { 
+                    await sock.sendMessage(from, {
                         text: '❌ *LIMIT HABIS*\n\nLimit harian Anda sudah habis. Silakan tunggu reset besok jam 00:00, atau ketik *!buypremium* untuk membeli akses tanpa batas (LIFETIME tersedia)!'
                     }, { quoted: msg });
                     return;
                 }
             }
-            
+
             try {
                 await activePlugin.execute(sock, msg, args);
             } catch (pluginError) {
@@ -373,9 +372,9 @@ async function messageHandler(sock, rawMsg) {
                 const { label } = detectErrorType(pluginError);
                 await sock.sendMessage(from, {
                     text: `❌ *Terjadi Kesalahan!*\n\n` +
-                          `Jenis: *${label}*\n` +
-                          `Perintah: *${prefix}${command}*\n\n` +
-                          `Laporan otomatis telah dikirim ke owner. Mohon tunggu perbaikan. 🙏`
+                        `Jenis: *${label}*\n` +
+                        `Perintah: *${prefix}${command}*\n\n` +
+                        `Laporan otomatis telah dikirim ke owner. Mohon tunggu perbaikan. 🙏`
                 }, { quoted: msg });
 
                 // 2. Kirim laporan lengkap ke Owner
