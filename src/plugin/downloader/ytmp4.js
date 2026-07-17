@@ -21,42 +21,52 @@ module.exports = {
         try {
             let videoUrl = null;
             let title = 'YouTube Video';
-
-            const fetchApi = async (apiCall, sourceName) => {
-                try {
-                    const res = await apiCall();
-                    const data = res?.data || res?.result;
-                    let mediaUrl = data?.video || data?.mp4 || data?.url;
-                    if (typeof mediaUrl === 'object' && mediaUrl !== null) {
-                        mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.download || mediaUrl;
-                    }
-                    if (!mediaUrl || typeof mediaUrl !== 'string') throw new Error('No valid URL found');
-                    return { url: mediaUrl, title: data?.title, source: sourceName };
-                } catch (e) {
-                    console.log(`${sourceName} gagal:`, e.message || e);
-                    throw e;
-                }
-            };
-
-            const promises = [
-                (async () => {
-                    const info = await youtubedl(url, { dumpSingleJson: true, noWarnings: true, noCheckCertificates: true, format: 'best[ext=mp4]/best' });
-                    if (!info || !info.url) throw new Error('Local yt-dlp failed to get URL');
-                    return { url: info.url, title: info.title, source: 'Local yt-dlp' };
-                })().catch(e => { console.log('Local yt-dlp gagal:', e.message || e); throw e; }),
-                fetchApi(() => ScravBotApi.harz.ytdlV4(url), 'Harz YTDL V4'),
-                fetchApi(() => ScravBotApi.harz.ytdlV3(url), 'Harz YTDL V3'),
-                fetchApi(() => ScravBotApi.harz.ytdlV2(url), 'Harz YTDL V2'),
-                fetchApi(() => ScravBotApi.tegarx.ytmp4v2(url), 'Tegarx YTMP4-2')
-            ];
+            let sourceName = '';
 
             try {
-                const result = await Promise.any(promises);
-                videoUrl = result.url;
-                title = result.title || title;
-                console.log(`✅ [YTMP4 Downloader] Berhasil menggunakan API: ${result.source}`);
-            } catch (aggregateError) {
-                throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil video YouTube.');
+                // 1. UTAMAKAN Local yt-dlp
+                const info = await youtubedl(url, { dumpSingleJson: true, noWarnings: true, noCheckCertificates: true, format: 'best[ext=mp4]/best' });
+                if (!info || !info.url) throw new Error('Local yt-dlp failed to get URL');
+                videoUrl = info.url;
+                title = info.title || title;
+                sourceName = 'Local yt-dlp';
+                console.log(`✅ [YTMP4 Downloader] Berhasil menggunakan metode utama: ${sourceName}`);
+            } catch (localError) {
+                console.log(`⚠️ Local yt-dlp gagal: ${localError.message}. Mengalihkan ke API Fallback...`);
+                
+                // 2. JIKA GAGAL, Berlomba menggunakan API Fallback
+                const fetchApi = async (apiCall, source) => {
+                    try {
+                        const res = await apiCall();
+                        const data = res?.data || res?.result;
+                        let mediaUrl = data?.video || data?.mp4 || data?.url;
+                        if (typeof mediaUrl === 'object' && mediaUrl !== null) {
+                            mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.download || mediaUrl;
+                        }
+                        if (!mediaUrl || typeof mediaUrl !== 'string') throw new Error('No valid URL found');
+                        return { url: mediaUrl, title: data?.title, source: source };
+                    } catch (e) {
+                        console.log(`${source} gagal:`, e.message || e);
+                        throw e;
+                    }
+                };
+
+                const promises = [
+                    fetchApi(() => ScravBotApi.harz.ytdlV4(url), 'Harz YTDL V4'),
+                    fetchApi(() => ScravBotApi.harz.ytdlV3(url), 'Harz YTDL V3'),
+                    fetchApi(() => ScravBotApi.harz.ytdlV2(url), 'Harz YTDL V2'),
+                    fetchApi(() => ScravBotApi.tegarx.ytmp4v2(url), 'Tegarx YTMP4-2')
+                ];
+
+                try {
+                    const result = await Promise.any(promises);
+                    videoUrl = result.url;
+                    title = result.title || title;
+                    sourceName = result.source;
+                    console.log(`✅ [YTMP4 Downloader] Berhasil menggunakan API Fallback: ${sourceName}`);
+                } catch (aggregateError) {
+                    throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil video YouTube.');
+                }
             }
 
             await sock.sendMessage(from, { 

@@ -21,56 +21,66 @@ module.exports = {
         try {
             let audioUrl = null;
             let title = 'YouTube Audio';
-
-            const fetchApi = async (apiCall, sourceName) => {
-                try {
-                    const res = await apiCall();
-                    const data = res?.data || res?.result;
-                    let mediaUrl = data?.audio || data?.mp3 || data?.url;
-                    if (typeof mediaUrl === 'object' && mediaUrl !== null) {
-                        mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.download || mediaUrl;
-                    }
-                    if (!mediaUrl || typeof mediaUrl !== 'string') throw new Error('No valid URL found');
-                    return { url: mediaUrl, title: data?.title, source: sourceName };
-                } catch (e) {
-                    console.log(`${sourceName} gagal:`, e.message || e);
-                    throw e;
-                }
-            };
-
-            const promises = [
-                (async () => {
-                    const info = await youtubedl(url, { dumpSingleJson: true, noWarnings: true, noCheckCertificates: true, format: 'bestaudio' });
-                    if (!info || !info.url) throw new Error('Local yt-dlp failed to get URL');
-                    
-                    const buffer = await new Promise((resolve, reject) => {
-                        const { spawn } = require('child_process');
-                        const ffmpeg = spawn('ffmpeg', ['-i', info.url, '-vn', '-acodec', 'libmp3lame', '-b:a', '128k', '-f', 'mp3', 'pipe:1']);
-                        const chunks = [];
-                        ffmpeg.stdout.on('data', chunk => chunks.push(chunk));
-                        ffmpeg.on('close', code => {
-                            if (code === 0) resolve(Buffer.concat(chunks));
-                            else reject(new Error('FFMPEG exited with code ' + code));
-                        });
-                        ffmpeg.on('error', err => reject(err));
-                    });
-
-                    return { url: buffer, title: info.title, source: 'Local yt-dlp' };
-                })().catch(e => { console.log('Local yt-dlp gagal:', e.message || e); throw e; }),
-                fetchApi(() => ScravBotApi.harz.ytmp3(url), 'Harz YTMP3'),
-                fetchApi(() => ScravBotApi.harz.ytdlV4(url), 'Harz YTDL V4'),
-                fetchApi(() => ScravBotApi.harz.ytdlV3(url), 'Harz YTDL V3'),
-                fetchApi(() => ScravBotApi.tegarx.ytmp3(url), 'Tegarx YTMP3'),
-                fetchApi(() => ScravBotApi.tegarx.ytmp3v2(url), 'Tegarx YTMP3-2')
-            ];
+            let sourceName = '';
 
             try {
-                const result = await Promise.any(promises);
-                audioUrl = result.url;
-                title = result.title || title;
-                console.log(`✅ [YTMP3 Downloader] Berhasil menggunakan API: ${result.source}`);
-            } catch (aggregateError) {
-                throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil audio YouTube.');
+                // 1. UTAMAKAN Local yt-dlp (Buffer ke memori via ffmpeg)
+                const info = await youtubedl(url, { dumpSingleJson: true, noWarnings: true, noCheckCertificates: true, format: 'bestaudio' });
+                if (!info || !info.url) throw new Error('Local yt-dlp failed to get URL');
+                
+                const buffer = await new Promise((resolve, reject) => {
+                    const { spawn } = require('child_process');
+                    const ffmpeg = spawn('ffmpeg', ['-i', info.url, '-vn', '-acodec', 'libmp3lame', '-b:a', '128k', '-f', 'mp3', 'pipe:1']);
+                    const chunks = [];
+                    ffmpeg.stdout.on('data', chunk => chunks.push(chunk));
+                    ffmpeg.on('close', code => {
+                        if (code === 0) resolve(Buffer.concat(chunks));
+                        else reject(new Error('FFMPEG exited with code ' + code));
+                    });
+                    ffmpeg.on('error', err => reject(err));
+                });
+
+                audioUrl = buffer;
+                title = info.title || title;
+                sourceName = 'Local yt-dlp (FFMPEG)';
+                console.log(`✅ [YTMP3 Downloader] Berhasil menggunakan metode utama: ${sourceName}`);
+            } catch (localError) {
+                console.log(`⚠️ Local yt-dlp gagal: ${localError.message}. Mengalihkan ke API Fallback...`);
+                
+                // 2. JIKA GAGAL, Berlomba menggunakan API Fallback
+                const fetchApi = async (apiCall, source) => {
+                    try {
+                        const res = await apiCall();
+                        const data = res?.data || res?.result;
+                        let mediaUrl = data?.audio || data?.mp3 || data?.url;
+                        if (typeof mediaUrl === 'object' && mediaUrl !== null) {
+                            mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.download || mediaUrl;
+                        }
+                        if (!mediaUrl || typeof mediaUrl !== 'string') throw new Error('No valid URL found');
+                        return { url: mediaUrl, title: data?.title, source: source };
+                    } catch (e) {
+                        console.log(`${source} gagal:`, e.message || e);
+                        throw e;
+                    }
+                };
+
+                const promises = [
+                    fetchApi(() => ScravBotApi.harz.ytmp3(url), 'Harz YTMP3'),
+                    fetchApi(() => ScravBotApi.harz.ytdlV4(url), 'Harz YTDL V4'),
+                    fetchApi(() => ScravBotApi.harz.ytdlV3(url), 'Harz YTDL V3'),
+                    fetchApi(() => ScravBotApi.tegarx.ytmp3(url), 'Tegarx YTMP3'),
+                    fetchApi(() => ScravBotApi.tegarx.ytmp3v2(url), 'Tegarx YTMP3-2')
+                ];
+
+                try {
+                    const result = await Promise.any(promises);
+                    audioUrl = result.url;
+                    title = result.title || title;
+                    sourceName = result.source;
+                    console.log(`✅ [YTMP3 Downloader] Berhasil menggunakan API Fallback: ${sourceName}`);
+                } catch (aggregateError) {
+                    throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil audio YouTube.');
+                }
             }
 
             const audioPayload = Buffer.isBuffer(audioUrl) ? audioUrl : { url: audioUrl };
