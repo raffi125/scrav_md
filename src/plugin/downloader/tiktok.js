@@ -21,55 +21,38 @@ module.exports = {
             let videoUrl = null;
             let title = 'TikTok Video';
 
-            // 1. Harz TikTok V4
+            const fetchApi = async (apiCall, sourceName) => {
+                try {
+                    const res = await apiCall(url);
+                    const data = res?.data || res?.result;
+                    let mediaUrl = data?.no_watermark || data?.video || data?.url;
+                    if (typeof mediaUrl === 'object' && mediaUrl !== null) {
+                        mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.download || mediaUrl;
+                    }
+                    if (!mediaUrl || typeof mediaUrl !== 'string') throw new Error('No valid URL found');
+                    return { url: mediaUrl, title: data?.title, source: sourceName };
+                } catch (e) {
+                    console.log(`${sourceName} gagal:`, e.message || e);
+                    throw e;
+                }
+            };
+
+            const promises = [
+                fetchApi(ScravBotApi.harz.tiktokV4, 'Harz TikTok V4'),
+                fetchApi(ScravBotApi.harz.tiktokV3, 'Harz TikTok V3'),
+                fetchApi(ScravBotApi.harz.tiktokV2, 'Harz TikTok V2'),
+                fetchApi(ScravBotApi.harz.tiktok, 'Harz TikTok'),
+                fetchApi(ScravBotApi.tegarx.tiktok, 'TegarX TikTok')
+            ];
+
             try {
-                const res = await ScravBotApi.harz.tiktokV4(url);
-                const data = res?.data || res?.result;
-                videoUrl = data?.no_watermark || data?.video || data?.url;
-                title = data?.title || title;
-            } catch (e) { console.log('Harz TikTok V4 gagal:', e.message || e); }
-
-            // 2. Harz TikTok V3
-            if (!videoUrl) {
-                try {
-                    const res = await ScravBotApi.harz.tiktokV3(url);
-                    const data = res?.data || res?.result;
-                    videoUrl = data?.no_watermark || data?.video || data?.url;
-                } catch (e) { console.log('Harz TikTok V3 gagal:', e.message || e); }
+                const result = await Promise.any(promises);
+                videoUrl = result.url;
+                title = result.title || title;
+                console.log(`✅ [TikTok Downloader] Berhasil menggunakan API: ${result.source}`);
+            } catch (aggregateError) {
+                throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil video TikTok.');
             }
-
-            // 3. Harz TikTok V2
-            if (!videoUrl) {
-                try {
-                    const res = await ScravBotApi.harz.tiktokV2(url);
-                    const data = res?.data || res?.result;
-                    videoUrl = data?.no_watermark || data?.video || data?.url;
-                } catch (e) { console.log('Harz TikTok V2 gagal:', e.message || e); }
-            }
-
-            // 4. Harz TikTok
-            if (!videoUrl) {
-                try {
-                    const res = await ScravBotApi.harz.tiktok(url);
-                    const data = res?.data || res?.result;
-                    videoUrl = data?.no_watermark || data?.video || data?.url;
-                } catch (e) { console.log('Harz TikTok gagal:', e.message || e); }
-            }
-
-            // 5. TegarX TikTok
-            if (!videoUrl) {
-                try {
-                    const res = await ScravBotApi.tegarx.tiktok(url);
-                    const data = res?.data || res?.result;
-                    videoUrl = data?.no_watermark || data?.video || data?.url;
-                } catch (e) { console.log('Tegarx TikTok gagal:', e.message || e); }
-            }
-
-            if (typeof videoUrl === 'object' && videoUrl !== null) {
-                videoUrl = videoUrl.url || videoUrl.link || videoUrl.download || videoUrl;
-            }
-
-            if (!videoUrl || typeof videoUrl !== 'string') throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil video TikTok.');
 
             await sock.sendMessage(from, {
                 video: { url: videoUrl },

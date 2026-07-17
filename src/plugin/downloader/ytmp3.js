@@ -21,55 +21,38 @@ module.exports = {
             let audioUrl = null;
             let title = 'YouTube Audio';
 
-            // 1. Harz YTMP3
+            const fetchApi = async (apiCall, sourceName) => {
+                try {
+                    const res = await apiCall(url);
+                    const data = res?.data || res?.result;
+                    let mediaUrl = data?.audio || data?.mp3 || data?.url;
+                    if (typeof mediaUrl === 'object' && mediaUrl !== null) {
+                        mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.download || mediaUrl;
+                    }
+                    if (!mediaUrl || typeof mediaUrl !== 'string') throw new Error('No valid URL found');
+                    return { url: mediaUrl, title: data?.title, source: sourceName };
+                } catch (e) {
+                    console.log(`${sourceName} gagal:`, e.message || e);
+                    throw e;
+                }
+            };
+
+            const promises = [
+                fetchApi(ScravBotApi.harz.ytmp3, 'Harz YTMP3'),
+                fetchApi(ScravBotApi.harz.ytdlV4, 'Harz YTDL V4'),
+                fetchApi(ScravBotApi.harz.ytdlV3, 'Harz YTDL V3'),
+                fetchApi(ScravBotApi.tegarx.ytmp3, 'Tegarx YTMP3'),
+                fetchApi(ScravBotApi.tegarx.ytmp3v2, 'Tegarx YTMP3-2')
+            ];
+
             try {
-                const res = await ScravBotApi.harz.ytmp3(url);
-                const data = res?.data || res?.result;
-                audioUrl = data?.audio || data?.mp3 || data?.url;
-                title = data?.title || title;
-            } catch (e) { console.log('Harz YTMP3 gagal:', e.message || e); }
-
-            // 2. Harz YTDL V4
-            if (!audioUrl) {
-                try {
-                    const res = await ScravBotApi.harz.ytdlV4(url);
-                    const data = res?.data || res?.result;
-                    audioUrl = data?.audio || data?.mp3 || data?.url;
-                } catch (e) { console.log('Harz YTDL V4 gagal:', e.message || e); }
+                const result = await Promise.any(promises);
+                audioUrl = result.url;
+                title = result.title || title;
+                console.log(`✅ [YTMP3 Downloader] Berhasil menggunakan API: ${result.source}`);
+            } catch (aggregateError) {
+                throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil audio YouTube.');
             }
-            
-            // 3. Harz YTDL V3
-            if (!audioUrl) {
-                try {
-                    const res = await ScravBotApi.harz.ytdlV3(url);
-                    const data = res?.data || res?.result;
-                    audioUrl = data?.audio || data?.mp3 || data?.url;
-                } catch (e) { console.log('Harz YTDL V3 gagal:', e.message || e); }
-            }
-
-            // 4. TegarX YTMP3
-            if (!audioUrl) {
-                try {
-                    const res = await ScravBotApi.tegarx.ytmp3(url);
-                    const data = res?.data || res?.result;
-                    audioUrl = data?.audio || data?.mp3 || data?.url;
-                } catch (e) { console.log('Tegarx YTMP3 gagal:', e.message || e); }
-            }
-            
-            // 5. TegarX YTMP3-2
-            if (!audioUrl) {
-                try {
-                    const res = await ScravBotApi.tegarx.ytmp3v2(url);
-                    const data = res?.data || res?.result;
-                    audioUrl = data?.audio || data?.mp3 || data?.url;
-                } catch (e) { console.log('Tegarx YTMP3-2 gagal:', e.message || e); }
-            }
-
-            if (typeof audioUrl === 'object' && audioUrl !== null) {
-                audioUrl = audioUrl.url || audioUrl.link || audioUrl.download || audioUrl;
-            }
-
-            if (!audioUrl || typeof audioUrl !== 'string') throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil audio YouTube.');
 
             await sock.sendMessage(from, { 
                 audio: { url: audioUrl }, 

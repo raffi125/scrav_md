@@ -21,59 +21,37 @@ module.exports = {
             let videoUrl = null;
             let title = 'Instagram Video';
 
-            // 1. Tegarx IG Reels (Prioritas Utama)
+            const fetchApi = async (apiCall, sourceName) => {
+                try {
+                    const res = await apiCall(url);
+                    const data = res?.data || res?.result;
+                    let mediaUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
+                    if (typeof mediaUrl === 'object' && mediaUrl !== null) {
+                        mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.download || mediaUrl;
+                    }
+                    if (!mediaUrl || typeof mediaUrl !== 'string') throw new Error('No valid URL found');
+                    return { url: mediaUrl, source: sourceName };
+                } catch (e) {
+                    console.log(`${sourceName} gagal:`, e.message || e);
+                    throw e;
+                }
+            };
+
+            const promises = [
+                fetchApi(ScravBotApi.tegarx.igReels, 'Tegarx IG Reels'),
+                fetchApi(ScravBotApi.tegarx.instagram, 'Tegarx IG'),
+                fetchApi(ScravBotApi.harz.igV4, 'Harz IG V4'),
+                fetchApi(ScravBotApi.harz.igV3, 'Harz IG V3'),
+                fetchApi(ScravBotApi.harz.igV2, 'Harz IG V2')
+            ];
+
             try {
-                const res = await ScravBotApi.tegarx.igReels(url);
-                const data = res?.data || res?.result;
-                videoUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
-                if (videoUrl) console.log('✅ [IG Downloader] Berhasil menggunakan API: Tegarx IG Reels');
-            } catch (e) { console.log('Tegarx IG Reels gagal:', e.message || e); }
-
-            // 2. Tegarx IG
-            if (!videoUrl) {
-                try {
-                    const res = await ScravBotApi.tegarx.instagram(url);
-                    const data = res?.data || res?.result;
-                    videoUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
-                    if (videoUrl) console.log('✅ [IG Downloader] Berhasil menggunakan API: Tegarx IG');
-                } catch (e) { console.log('Tegarx IG gagal:', e.message || e); }
+                const result = await Promise.any(promises);
+                videoUrl = result.url;
+                console.log(`✅ [IG Downloader] Berhasil menggunakan API: ${result.source}`);
+            } catch (aggregateError) {
+                throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil video Instagram.');
             }
-
-            // 3. Harz IG V4
-            if (!videoUrl) {
-                try {
-                    const res = await ScravBotApi.harz.igV4(url);
-                    const data = res?.data || res?.result;
-                    videoUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
-                    if (videoUrl) console.log('✅ [IG Downloader] Berhasil menggunakan API: Harz IG V4');
-                } catch (e) { console.log('Harz IG V4 gagal:', e.message || e); }
-            }
-
-            // 4. Harz IG V3
-            if (!videoUrl) {
-                try {
-                    const res = await ScravBotApi.harz.igV3(url);
-                    const data = res?.data || res?.result;
-                    videoUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
-                    if (videoUrl) console.log('✅ [IG Downloader] Berhasil menggunakan API: Harz IG V3');
-                } catch (e) { console.log('Harz IG V3 gagal:', e.message || e); }
-            }
-
-            // 5. Harz IG V2
-            if (!videoUrl) {
-                try {
-                    const res = await ScravBotApi.harz.igV2(url);
-                    const data = res?.data || res?.result;
-                    videoUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
-                    if (videoUrl) console.log('✅ [IG Downloader] Berhasil menggunakan API: Harz IG V2');
-                } catch (e) { console.log('Harz IG V2 gagal:', e.message || e); }
-            }
-
-            if (typeof videoUrl === 'object' && videoUrl !== null) {
-                videoUrl = videoUrl.url || videoUrl.link || videoUrl.download || videoUrl;
-            }
-
-            if (!videoUrl || typeof videoUrl !== 'string') throw new Error('Semua API Fallback (Harz & TegarX) gagal mengambil video Instagram.');
 
             await sock.sendMessage(from, {
                 video: { url: videoUrl },
