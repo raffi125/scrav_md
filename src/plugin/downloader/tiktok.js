@@ -27,7 +27,7 @@ module.exports = {
                 const data = res?.data || res?.result;
                 videoUrl = data?.no_watermark || data?.video || data?.url;
                 title = data?.title || title;
-            } catch (e) { console.log('Harz TikTok V4 gagal'); }
+            } catch (e) { console.log('Harz TikTok V4 gagal:', e.message || e); }
 
             // 2. Harz TikTok V3
             if (!videoUrl) {
@@ -35,7 +35,7 @@ module.exports = {
                     const res = await ScravBotApi.harz.tiktokV3(url);
                     const data = res?.data || res?.result;
                     videoUrl = data?.no_watermark || data?.video || data?.url;
-                } catch (e) { console.log('Harz TikTok V3 gagal'); }
+                } catch (e) { console.log('Harz TikTok V3 gagal:', e.message || e); }
             }
 
             // 3. Harz TikTok V2
@@ -44,7 +44,7 @@ module.exports = {
                     const res = await ScravBotApi.harz.tiktokV2(url);
                     const data = res?.data || res?.result;
                     videoUrl = data?.no_watermark || data?.video || data?.url;
-                } catch (e) { console.log('Harz TikTok V2 gagal'); }
+                } catch (e) { console.log('Harz TikTok V2 gagal:', e.message || e); }
             }
 
             // 4. Harz TikTok
@@ -53,7 +53,7 @@ module.exports = {
                     const res = await ScravBotApi.harz.tiktok(url);
                     const data = res?.data || res?.result;
                     videoUrl = data?.no_watermark || data?.video || data?.url;
-                } catch (e) { console.log('Harz TikTok gagal'); }
+                } catch (e) { console.log('Harz TikTok gagal:', e.message || e); }
             }
 
             // 5. TegarX TikTok
@@ -62,7 +62,7 @@ module.exports = {
                     const res = await ScravBotApi.tegarx.tiktok(url);
                     const data = res?.data || res?.result;
                     videoUrl = data?.no_watermark || data?.video || data?.url;
-                } catch (e) { console.log('Tegarx TikTok gagal'); }
+                } catch (e) { console.log('Tegarx TikTok gagal:', e.message || e); }
             }
 
             if (typeof videoUrl === 'object' && videoUrl !== null) {

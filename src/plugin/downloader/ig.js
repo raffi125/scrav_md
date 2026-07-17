@@ -27,7 +27,7 @@ module.exports = {
                 const data = res?.data || res?.result;
                 videoUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
                 if (videoUrl) console.log('✅ [IG Downloader] Berhasil menggunakan API: Tegarx IG Reels');
-            } catch (e) { console.log('Tegarx IG Reels gagal'); }
+            } catch (e) { console.log('Tegarx IG Reels gagal:', e.message || e); }
 
             // 2. Tegarx IG
             if (!videoUrl) {
@@ -36,7 +36,7 @@ module.exports = {
                     const data = res?.data || res?.result;
                     videoUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
                     if (videoUrl) console.log('✅ [IG Downloader] Berhasil menggunakan API: Tegarx IG');
-                } catch (e) { console.log('Tegarx IG gagal'); }
+                } catch (e) { console.log('Tegarx IG gagal:', e.message || e); }
             }
 
             // 3. Harz IG V4
@@ -46,7 +46,7 @@ module.exports = {
                     const data = res?.data || res?.result;
                     videoUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
                     if (videoUrl) console.log('✅ [IG Downloader] Berhasil menggunakan API: Harz IG V4');
-                } catch (e) { console.log('Harz IG V4 gagal'); }
+                } catch (e) { console.log('Harz IG V4 gagal:', e.message || e); }
             }
 
             // 4. Harz IG V3
@@ -56,7 +56,7 @@ module.exports = {
                     const data = res?.data || res?.result;
                     videoUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
                     if (videoUrl) console.log('✅ [IG Downloader] Berhasil menggunakan API: Harz IG V3');
-                } catch (e) { console.log('Harz IG V3 gagal'); }
+                } catch (e) { console.log('Harz IG V3 gagal:', e.message || e); }
             }
 
             // 5. Harz IG V2
@@ -66,7 +66,7 @@ module.exports = {
                     const data = res?.data || res?.result;
                     videoUrl = data?.url || data?.video || (Array.isArray(data) ? data[0]?.url : null);
                     if (videoUrl) console.log('✅ [IG Downloader] Berhasil menggunakan API: Harz IG V2');
-                } catch (e) { console.log('Harz IG V2 gagal'); }
+                } catch (e) { console.log('Harz IG V2 gagal:', e.message || e); }
             }
 
             if (typeof videoUrl === 'object' && videoUrl !== null) {

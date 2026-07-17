@@ -27,7 +27,7 @@ module.exports = {
                 const data = res?.data || res?.result;
                 audioUrl = data?.audio || data?.mp3 || data?.url;
                 title = data?.title || title;
-            } catch (e) { console.log('Harz YTMP3 gagal'); }
+            } catch (e) { console.log('Harz YTMP3 gagal:', e.message || e); }
 
             // 2. Harz YTDL V4
             if (!audioUrl) {
@@ -35,7 +35,7 @@ module.exports = {
                     const res = await ScravBotApi.harz.ytdlV4(url);
                     const data = res?.data || res?.result;
                     audioUrl = data?.audio || data?.mp3 || data?.url;
-                } catch (e) { console.log('Harz YTDL V4 gagal'); }
+                } catch (e) { console.log('Harz YTDL V4 gagal:', e.message || e); }
             }
             
             // 3. Harz YTDL V3
@@ -44,7 +44,7 @@ module.exports = {
                     const res = await ScravBotApi.harz.ytdlV3(url);
                     const data = res?.data || res?.result;
                     audioUrl = data?.audio || data?.mp3 || data?.url;
-                } catch (e) { console.log('Harz YTDL V3 gagal'); }
+                } catch (e) { console.log('Harz YTDL V3 gagal:', e.message || e); }
             }
 
             // 4. TegarX YTMP3
@@ -53,7 +53,7 @@ module.exports = {
                     const res = await ScravBotApi.tegarx.ytmp3(url);
                     const data = res?.data || res?.result;
                     audioUrl = data?.audio || data?.mp3 || data?.url;
-                } catch (e) { console.log('Tegarx YTMP3 gagal'); }
+                } catch (e) { console.log('Tegarx YTMP3 gagal:', e.message || e); }
             }
             
             // 5. TegarX YTMP3-2
@@ -62,7 +62,7 @@ module.exports = {
                     const res = await ScravBotApi.tegarx.ytmp3v2(url);
                     const data = res?.data || res?.result;
                     audioUrl = data?.audio || data?.mp3 || data?.url;
-                } catch (e) { console.log('Tegarx YTMP3-2 gagal'); }
+                } catch (e) { console.log('Tegarx YTMP3-2 gagal:', e.message || e); }
             }
 
             if (typeof audioUrl === 'object' && audioUrl !== null) {

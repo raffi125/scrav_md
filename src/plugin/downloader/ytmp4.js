@@ -27,7 +27,7 @@ module.exports = {
                 const data = res?.data || res?.result;
                 videoUrl = data?.video || data?.mp4 || data?.url;
                 title = data?.title || title;
-            } catch (e) { console.log('Harz YTDL V4 gagal'); }
+            } catch (e) { console.log('Harz YTDL V4 gagal:', e.message || e); }
 
             // 2. Harz YTDL V3
             if (!videoUrl) {
@@ -35,7 +35,7 @@ module.exports = {
                     const res = await ScravBotApi.harz.ytdlV3(url);
                     const data = res?.data || res?.result;
                     videoUrl = data?.video || data?.mp4 || data?.url;
-                } catch (e) { console.log('Harz YTDL V3 gagal'); }
+                } catch (e) { console.log('Harz YTDL V3 gagal:', e.message || e); }
             }
             
             // 3. Harz YTDL V2
@@ -44,7 +44,7 @@ module.exports = {
                     const res = await ScravBotApi.harz.ytdlV2(url);
                     const data = res?.data || res?.result;
                     videoUrl = data?.video || data?.mp4 || data?.url;
-                } catch (e) { console.log('Harz YTDL V2 gagal'); }
+                } catch (e) { console.log('Harz YTDL V2 gagal:', e.message || e); }
             }
 
             // 4. TegarX YTMP4-2
@@ -53,7 +53,7 @@ module.exports = {
                     const res = await ScravBotApi.tegarx.ytmp4v2(url);
                     const data = res?.data || res?.result;
                     videoUrl = data?.video || data?.mp4 || data?.url;
-                } catch (e) { console.log('Tegarx YTMP4-2 gagal'); }
+                } catch (e) { console.log('Tegarx YTMP4-2 gagal:', e.message || e); }
             }
 
             if (typeof videoUrl === 'object' && videoUrl !== null) {
