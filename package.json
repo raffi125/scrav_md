@@ -29,6 +29,6 @@
     "pino": "^10.3.1",
     "qs": "^6.15.3",
     "wa-sticker-formatter": "^4.4.4",
-    "youtube-dl-exec": "^3.1.8"
+    "youtube-dl-exec": "^3.1.9"
   }
 }

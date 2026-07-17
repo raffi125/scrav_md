@@ -1,8 +1,8 @@
 const youtubedl = require('youtube-dl-exec');
 
 module.exports = {
-    name: 'ytmp4', // Command utama
-    aliases: ['ytmp3', 'yt', 'youtube'],
+    name: 'hhh', // Command utama
+    aliases: ['hhh', 'h', 'kkk'],
     category: 'Downloader',
     limit: true,
     description: 'Download Video / Audio YouTube via yt-dlp',
@@ -11,14 +11,14 @@ module.exports = {
         if (!args[0]) return sock.sendMessage(from, { text: '❌ Harap masukkan URL YouTube.' }, { quoted: msg });
 
         const url = args[0];
-        
+
         // Cek apakah user memanggil ytmp3 atau ytmp4
         const prefix = require('../../../config').prefix; // Mundur 3 folder ke root karena ini di src/plugin/downloader
         const isCmd = body.startsWith(prefix);
         const command = isCmd ? body.slice(prefix.length).trim().split(' ').shift().toLowerCase() : 'ytmp4'; // Default auto-dl adalah ytmp4
-        
+
         const isAudio = command === 'ytmp3';
-        
+
         await sock.sendMessage(from, { react: { text: "⏳", key: msg.key } });
 
         try {
@@ -32,7 +32,7 @@ module.exports = {
                 format: safeFormat
             });
 
-            const mediaUrl = info.url; 
+            const mediaUrl = info.url;
             const title = info.title || 'YouTube Media';
 
             if (!mediaUrl) throw new Error('URL tidak ditemukan');

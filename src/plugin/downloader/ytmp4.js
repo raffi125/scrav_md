@@ -1,4 +1,5 @@
 const { ScravBotApi } = require('../../lib/apimanager');
+const youtubedl = require('youtube-dl-exec');
 
 module.exports = {
     name: 'ytmp4',
@@ -38,6 +39,11 @@ module.exports = {
             };
 
             const promises = [
+                (async () => {
+                    const info = await youtubedl(url, { dumpSingleJson: true, noWarnings: true, noCheckCertificates: true, format: 'best[ext=mp4]/best' });
+                    if (!info || !info.url) throw new Error('Local yt-dlp failed to get URL');
+                    return { url: info.url, title: info.title, source: 'Local yt-dlp' };
+                })().catch(e => { console.log('Local yt-dlp gagal:', e.message || e); throw e; }),
                 fetchApi(() => ScravBotApi.harz.ytdlV4(url), 'Harz YTDL V4'),
                 fetchApi(() => ScravBotApi.harz.ytdlV3(url), 'Harz YTDL V3'),
                 fetchApi(() => ScravBotApi.harz.ytdlV2(url), 'Harz YTDL V2'),
