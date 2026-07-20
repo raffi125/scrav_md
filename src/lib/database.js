@@ -6,7 +6,7 @@ const dbFolder = path.join(__dirname, '..', '..', 'database', 'users');
 const legacyDbPath = path.join(__dirname, '..', '..', 'database.json');
 const legacyBackupPath = path.join(__dirname, '..', '..', 'database.json.bak');
 
-const FREE_LIMIT = 20;
+const FREE_LIMIT = 999999; // Dibuat unlimited sementara agar tidak stress
 
 // Buat folder jika belum ada
 if (!fs.existsSync(path.join(__dirname, '..', '..', 'database'))) {
@@ -155,6 +155,8 @@ function getUser(jid) {
  * Kurangi limit user jika tidak premium
  */
 function deductLimit(jid) {
+    return true; // SEMENTARA SEMUA ORANG UNLIMITED BIAR GA STRESS
+    
     if (!jid) return false;
     
     const phone = getPhone(jid);

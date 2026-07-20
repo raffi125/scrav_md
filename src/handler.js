@@ -367,7 +367,7 @@ async function messageHandler(sock, rawMsg) {
 
                 if (!canExecute) {
                     await sock.sendMessage(from, {
-                        text: '❌ *LIMIT HABIS*\n\nLimit harian Anda sudah habis. Silakan tunggu reset besok jam 00:00, atau ketik *!buypremium* untuk membeli akses tanpa batas (LIFETIME tersedia)!'
+                        text: `❌ *LIMIT HABIS*\n\n_(Pesan Debug untuk Owner: Nomor kamu terdeteksi sebagai ${jidStr}, sedangkan di config.js diset ke ${ownerNumber}. Karena tidak cocok, kamu dianggap user biasa!)_\n\nLimit harian Anda sudah habis. Silakan tunggu reset besok jam 00:00, atau ketik *!buypremium* untuk membeli akses tanpa batas (LIFETIME tersedia)!`
                     }, { quoted: msg });
                     return;
                 }
