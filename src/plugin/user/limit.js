@@ -24,7 +24,7 @@ module.exports = {
 
         const reply = `╭─「 *STATUS PENGGUNA* 」
 │ 👤 *Nama:* ${pushName || 'User'}
-│ 📱 *Nomor:* ${jid.split('@')[0]}
+│ 📱 *Nomor:* ${db.getPhone(jid)}
 │ 💳 *Status:* ${statusTxt}
 │ 📊 *Sisa Limit:* ${limitTxt}
 │ ⏳ *Expired:* ${expTxt}
