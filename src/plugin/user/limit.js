@@ -8,9 +8,7 @@ module.exports = {
     async execute(sock, msg, args) {
         const { from, sender, pushName } = msg;
         const jid = sender || from;
-        console.log('[DEBUG-LIMIT] JID:', jid, '| ownerNumber:', require('../../../config').ownerNumber, '| getPhone(jid):', db.getPhone(jid), '| getPhone(owner):', db.getPhone(require('../../../config').ownerNumber));
-        const isOwner = db.isOwnerJid(jid);
-        console.log('[DEBUG-LIMIT] isOwnerJid result:', isOwner);
+        const isOwner = await db.isOwnerAsync(jid, sock);
         const user = db.getUser(jid);
 
         let statusTxt;

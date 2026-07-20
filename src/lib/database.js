@@ -314,6 +314,22 @@ function unbanUser(jid) {
     saveUser(jid, user);
 }
 
+async function isOwnerAsync(jid, sock) {
+    if (!jid) return false;
+    if (isOwnerJid(jid)) return true;
+    if (!sock?.signalRepository?.lidMapping) return false;
+    try {
+        const pnJid = await sock.signalRepository.lidMapping.getPNForLID(jid);
+        if (pnJid) {
+            const phone = getPhone(pnJid);
+            if (phone === getPhone(config.ownerNumber)) return true;
+            if (config.botNumber && phone === getPhone(config.botNumber)) return true;
+            if (pnJid.includes(config.ownerNumber) || (config.botNumber && pnJid.includes(config.botNumber))) return true;
+        }
+    } catch (_) {}
+    return false;
+}
+
 module.exports = {
     getUser,
     deductLimit,
@@ -324,5 +340,6 @@ module.exports = {
     unbanUser,
     FREE_LIMIT,
     getPhone,
-    isOwnerJid
+    isOwnerJid,
+    isOwnerAsync
 };

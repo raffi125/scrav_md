@@ -349,16 +349,8 @@ async function messageHandler(sock, rawMsg) {
             }
         }
 
-        // --- CEK OWNER (MENGGUNAKAN REFERENSI OURIN/HISOKA) ---
-        // Bersihkan JID sender dengan menghapus @s.whatsapp.net dan device :12
-        const senderJidRaw = jid.split('@')[0].split(':')[0];
-        const botJidRaw = config.botNumber ? config.botNumber.replace(/[^0-9]/g, '') : '';
-        const ownerJidRaw = config.ownerNumber ? config.ownerNumber.replace(/[^0-9]/g, '') : '';
-        
-        // isCreator = true jika sender adalah nomor owner atau nomor bot
-        const isCreator = (senderJidRaw === ownerJidRaw) || (botJidRaw && senderJidRaw === botJidRaw);
-        // isOwner = true jika isCreator atau jika pesan dikirim dari HP bot sendiri (fromMe)
-        const isOwner = isCreator || msg.isFromMe;
+        // --- CEK OWNER ---
+        const isOwner = msg.isFromMe || await db.isOwnerAsync(jid, sock);
 
         if (activePlugin) {
             // Cek apakah plugin ini membutuhkan limit
