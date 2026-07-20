@@ -31,7 +31,10 @@ function serialize(msg, sock) {
     msg.type = type;
     msg.from = msg.key.remoteJid;
     msg.isGroup = msg.from.endsWith('@g.us');
-    msg.sender = msg.isGroup ? msg.key.participant : msg.from;
+    
+    // Logika standar Baileys untuk mendapatkan sender yang benar (terutama untuk pesan fromMe)
+    const botId = sock?.user?.id ? sock.user.id.split(':')[0] + '@s.whatsapp.net' : '';
+    msg.sender = msg.key.fromMe ? (botId || msg.from) : (msg.isGroup ? msg.key.participant : msg.from);
     msg.isFromMe = msg.key.fromMe;
 
     let body = '';
