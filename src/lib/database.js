@@ -2,18 +2,23 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../../config');
 
-const dbFolder = path.join(__dirname, '..', '..', 'database', 'users');
+const dbFolderUsers = path.join(__dirname, '..', '..', 'database', 'users');
+const dbFolderPremium = path.join(__dirname, '..', '..', 'database', 'premium');
+const dbFolderOwner = path.join(__dirname, '..', '..', 'database', 'owner');
 const legacyDbPath = path.join(__dirname, '..', '..', 'database.json');
 const legacyBackupPath = path.join(__dirname, '..', '..', 'database.json.bak');
 
 const FREE_LIMIT = 20;
 
 // Buat folder jika belum ada
-if (!fs.existsSync(path.join(__dirname, '..', '..', 'database'))) {
-    fs.mkdirSync(path.join(__dirname, '..', '..', 'database'), { recursive: true });
-}
-if (!fs.existsSync(dbFolder)) {
-    fs.mkdirSync(dbFolder, { recursive: true });
+const folders = [
+    path.join(__dirname, '..', '..', 'database'),
+    dbFolderUsers,
+    dbFolderPremium,
+    dbFolderOwner
+];
+for (const dir of folders) {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
 /**
@@ -21,7 +26,6 @@ if (!fs.existsSync(dbFolder)) {
  */
 function getPhone(jid) {
     if (!jid) return 'unknown';
-    // Hapus device string seperti :12 dan domain @s.whatsapp.net
     let number = jid.split('@')[0].split(':')[0];
     if (number.startsWith('62')) {
         number = '0' + number.slice(2);
@@ -30,11 +34,34 @@ function getPhone(jid) {
 }
 
 /**
- * Ambil file path untuk user tertentu
+ * Cek apakah JID adalah Owner atau Bot
  */
-function getUserFilePath(jid) {
+function isOwnerJid(jid) {
+    if (!jid) return false;
+    const phone = getPhone(jid);
+    if (phone === getPhone(config.ownerNumber)) return true;
+    if (config.botNumber && phone === getPhone(config.botNumber)) return true;
+    if (jid.includes(config.ownerNumber) || (config.botNumber && jid.includes(config.botNumber))) return true;
+    return false;
+}
+
+/**
+ * Cari file user di ketiga folder (Owner -> Premium -> Users)
+ * Mengembalikan letak file saat ini, atau default (Users) jika tidak ditemukan
+ */
+function findUserFilePath(jid) {
     const phoneNumber = getPhone(jid);
-    return path.join(dbFolder, `${phoneNumber}.json`);
+    
+    // Jika dia owner, maka path default-nya di folder owner
+    if (isOwnerJid(jid)) return path.join(dbFolderOwner, `${phoneNumber}.json`);
+
+    const ownerPath = path.join(dbFolderOwner, `${phoneNumber}.json`);
+    const premiumPath = path.join(dbFolderPremium, `${phoneNumber}.json`);
+    const usersPath = path.join(dbFolderUsers, `${phoneNumber}.json`);
+
+    if (fs.existsSync(ownerPath)) return ownerPath;
+    if (fs.existsSync(premiumPath)) return premiumPath;
+    return usersPath; // Default fallback jika belum ada file
 }
 
 /**
@@ -50,7 +77,7 @@ function migrateDatabase() {
             if (db.users) {
                 let count = 0;
                 for (const jid in db.users) {
-                    const filePath = getUserFilePath(jid);
+                    const filePath = findUserFilePath(jid);
                     // Jangan overwrite jika user sudah punya file baru
                     if (!fs.existsSync(filePath)) {
                         fs.writeFileSync(filePath, JSON.stringify(db.users[jid], null, 2));
@@ -76,7 +103,7 @@ migrateDatabase();
  * Muat data user dari file. Jika belum ada, kembalikan format default.
  */
 function loadUser(jid) {
-    const filePath = getUserFilePath(jid);
+    const filePath = findUserFilePath(jid);
     if (fs.existsSync(filePath)) {
         try {
             const data = fs.readFileSync(filePath, 'utf8');
@@ -116,12 +143,30 @@ function loadUser(jid) {
 }
 
 /**
- * Simpan data user ke file
+ * Dapatkan target folder seharusnya berdasarkan status user
+ */
+function getTargetFolder(jid, userData) {
+    if (isOwnerJid(jid)) return dbFolderOwner;
+    if (userData.isPremium) return dbFolderPremium;
+    return dbFolderUsers;
+}
+
+/**
+ * Simpan data user ke file & Pindahkan file jika status tier (Owner/Premium/User) berubah
  */
 function saveUser(jid, userData) {
-    const filePath = getUserFilePath(jid);
+    const currentPath = findUserFilePath(jid);
+    const phoneNumber = getPhone(jid);
+    const targetFolder = getTargetFolder(jid, userData);
+    const targetPath = path.join(targetFolder, `${phoneNumber}.json`);
+
     try {
-        fs.writeFileSync(filePath, JSON.stringify(userData, null, 2));
+        // Jika file sudah ada tapi di folder yang salah (misal: user biasa baru beli premium)
+        if (fs.existsSync(currentPath) && currentPath !== targetPath) {
+            fs.unlinkSync(currentPath); // Hapus file lama di folder sebelumnya
+        }
+        
+        fs.writeFileSync(targetPath, JSON.stringify(userData, null, 2));
     } catch (err) {
         console.error(`Gagal menyimpan data user ${jid}:`, err);
     }
@@ -144,7 +189,8 @@ function getUser(jid) {
     }
 
     // Untuk memastikan file dibuat jika ini user baru
-    if (!fs.existsSync(getUserFilePath(jid))) {
+    const expectedPath = path.join(getTargetFolder(jid, user), `${getPhone(jid)}.json`);
+    if (!fs.existsSync(expectedPath)) {
         saveUser(jid, user);
     }
 
@@ -208,9 +254,9 @@ function delPremium(jid) {
  * Reset limit semua user gratis setiap hari
  */
 function resetAllLimits() {
-    if (!fs.existsSync(dbFolder)) return;
+    if (!fs.existsSync(dbFolderUsers)) return;
     
-    const files = fs.readdirSync(dbFolder);
+    const files = fs.readdirSync(dbFolderUsers);
     for (const file of files) {
         if (file.endsWith('.json')) {
             const jid = file.replace('.json', '') + '@s.whatsapp.net';
