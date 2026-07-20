@@ -97,12 +97,20 @@ function loadUser(jid) {
         uang: 0,
         xp: 0,
         level: 1,
+        hp: 100,
+        maxHp: 100,
+        atk: 10,
+        def: 5,
         lastDaily: 0,
         lastMancing: 0,
+        lastHunt: 0,
         inventory: {
             ikan: 0,
             sampah: 0,
-            box: 0
+            box: 0,
+            potion: 0,
+            sword: 0,
+            armor: 0
         }
     };
 }
@@ -147,7 +155,8 @@ function getUser(jid) {
  * Kurangi limit user jika tidak premium
  */
 function deductLimit(jid) {
-    if (jid.includes(config.ownerNumber)) return true;
+    if (!jid) return false;
+    if (jid.includes(config.ownerNumber) || jid.includes(config.botNumber)) return true;
 
     const user = getUser(jid);
     if (user.isPremium) return true;
@@ -212,7 +221,8 @@ function resetAllLimits() {
  * Tangani Anti-Spam
  */
 function handleAntiSpam(jid) {
-    if (jid.includes(config.ownerNumber)) return false;
+    if (!jid) return false;
+    if (jid.includes(config.ownerNumber) || jid.includes(config.botNumber)) return false;
 
     const user = getUser(jid);
     if (user.isBanned) return true;
