@@ -323,5 +323,6 @@ module.exports = {
     handleAntiSpam,
     unbanUser,
     FREE_LIMIT,
-    getPhone
+    getPhone,
+    isOwnerJid
 };

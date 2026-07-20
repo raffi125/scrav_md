@@ -8,11 +8,22 @@ module.exports = {
     async execute(sock, msg, args) {
         const { from, sender, pushName } = msg;
         const jid = sender || from;
+        const isOwner = db.isOwnerJid(jid);
         const user = db.getUser(jid);
 
-        let statusTxt = user.isPremium ? '🌟 *PREMIUM*' : '🆓 *GRATIS*';
-        let limitTxt = user.isPremium ? '♾️ Unlimited' : `${user.limit} / ${db.FREE_LIMIT}`;
-        
+        let statusTxt;
+        let limitTxt;
+        if (isOwner) {
+            statusTxt = '👑 *OWNER*';
+            limitTxt = '♾️ Unlimited';
+        } else if (user.isPremium) {
+            statusTxt = '🌟 *PREMIUM*';
+            limitTxt = '♾️ Unlimited';
+        } else {
+            statusTxt = '🆓 *GRATIS*';
+            limitTxt = `${user.limit} / ${db.FREE_LIMIT}`;
+        }
+
         let expTxt = '-';
         if (user.isPremium) {
             if (user.premiumExpired === 'LIFETIME') {
@@ -23,8 +34,8 @@ module.exports = {
         }
 
         const reply = `╭─「 *STATUS PENGGUNA* 」
-│ 👤 *Nama:* ${pushName || 'User'}
-│ 📱 *Nomor:* ${db.getPhone(jid)}
+│ 👤 *Nama:* ${pushName || 'User'}s
+│ 📱 *Nomor:* ${jid.split('@')[0]}
 │ 💳 *Status:* ${statusTxt}
 │ 📊 *Sisa Limit:* ${limitTxt}
 │ ⏳ *Expired:* ${expTxt}
