@@ -349,9 +349,18 @@ async function messageHandler(sock, rawMsg) {
             }
         }
 
+        // --- CEK OWNER (MENGGUNAKAN REFERENSI OURIN/HISOKA) ---
+        const botNumber = config.botNumber ? config.botNumber.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : '';
+        const ownerNumber = config.ownerNumber ? config.ownerNumber.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : '';
+        
+        // isCreator = true jika sender adalah nomor owner atau nomor bot
+        const isCreator = [ownerNumber, botNumber].includes(jid);
+        // isOwner = true jika isCreator atau jika pesan dikirim dari HP bot sendiri (fromMe)
+        const isOwner = isCreator || msg.isFromMe;
+
         if (activePlugin) {
             // Cek apakah plugin ini membutuhkan limit
-            if (activePlugin.limit) {
+            if (activePlugin.limit && !isOwner) {
                 // Sender format: 628xxx@s.whatsapp.net
                 const canExecute = db.deductLimit(jid);
 
