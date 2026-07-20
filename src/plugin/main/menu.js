@@ -90,18 +90,21 @@ module.exports = {
             const fs = require('fs');
             const path = require('path');
             
-            // Caching: Simpan di property fungsi agar tidak baca disk berulang kali
             if (!this.cachedBanner) {
                 const bannerPath = path.join(__dirname, '..', '..', 'assets', 'banner.png');
                 if (fs.existsSync(bannerPath)) {
-                    this.cachedBanner = fs.readFileSync(bannerPath);
+                    const stat = fs.statSync(bannerPath);
+                    if (stat.size <= 200 * 1024) {
+                        this.cachedBanner = fs.readFileSync(bannerPath);
+                    } else {
+                        console.log(`WARNING: banner.png terlalu besar (${(stat.size / 1024 / 1024).toFixed(1)}MB), skip thumbnail biar cepet.`);
+                    }
                 } else {
-                    console.log('WARNING: File banner.jpg tidak ditemukan di folder src/assets!');
+                    console.log('WARNING: File banner.png tidak ditemukan di folder src/assets!');
                 }
             }
             
             if (this.cachedBanner) {
-                // Kirim menu menggunakan externalAdReply (jauh lebih cepat daripada upload full image)
                 await sock.sendMessage(from, { 
                     text: menuText,
                     contextInfo: {
@@ -109,14 +112,13 @@ module.exports = {
                             title: `👑 ${botName} PREMIUM 👑`,
                             body: 'Pilih menu di bawah ini',
                             thumbnail: this.cachedBanner,
-                            sourceUrl: "https://github.com/itsliaaa/baileys", // Mencontek dari referensi
+                            sourceUrl: "https://github.com/itsliaaa/baileys",
                             mediaType: 1,
                             renderLargerThumbnail: true
                         }
                     }
                 }, { quoted: msg });
             } else {
-                // Jika file gambar belum dimasukkan oleh owner, cukup kirim teks saja tanpa error
                 await sock.sendMessage(from, { text: menuText }, { quoted: msg });
             }
 
