@@ -350,12 +350,12 @@ async function messageHandler(sock, rawMsg) {
         }
 
         // --- CEK OWNER (MENGGUNAKAN REFERENSI OURIN/HISOKA) ---
-        const botNumber = config.botNumber ? config.botNumber.replace(/[^0-9]/g, '') : '';
-        const ownerNumber = config.ownerNumber ? config.ownerNumber.replace(/[^0-9]/g, '') : '';
+        const senderPhone = db.getPhone(jid);
+        const botPhone = config.botNumber ? db.getPhone(config.botNumber) : '';
+        const ownerPhone = config.ownerNumber ? db.getPhone(config.ownerNumber) : '';
         
-        // isCreator = true jika sender mengandung nomor owner atau nomor bot (Bypass format multi-device :12)
-        const jidStr = String(jid);
-        const isCreator = jidStr.includes(ownerNumber) || (botNumber && jidStr.includes(botNumber));
+        // isCreator = true jika sender adalah nomor owner atau nomor bot
+        const isCreator = (senderPhone === ownerPhone) || (botPhone && senderPhone === botPhone);
         // isOwner = true jika isCreator atau jika pesan dikirim dari HP bot sendiri (fromMe)
         const isOwner = isCreator || msg.isFromMe;
 
