@@ -86,45 +86,6 @@ module.exports = {
         menuText += `💡 *Tips:* Ketik *${config.prefix}buypremium* untuk mendapatkan limit unlimited!\n`;
         menuText += `👨‍💻 Hubungi owner (*${config.prefix}owner*) jika bot mengalami masalah.`;
 
-        try {
-            const fs = require('fs');
-            const path = require('path');
-            
-            if (!this.cachedBanner) {
-                const bannerPath = path.join(__dirname, '..', '..', 'assets', 'banner.png');
-                if (fs.existsSync(bannerPath)) {
-                    const stat = fs.statSync(bannerPath);
-                    if (stat.size <= 200 * 1024) {
-                        this.cachedBanner = fs.readFileSync(bannerPath);
-                    } else {
-                        console.log(`WARNING: banner.png terlalu besar (${(stat.size / 1024 / 1024).toFixed(1)}MB), skip thumbnail biar cepet.`);
-                    }
-                } else {
-                    console.log('WARNING: File banner.png tidak ditemukan di folder src/assets!');
-                }
-            }
-            
-            if (this.cachedBanner) {
-                await sock.sendMessage(from, { 
-                    text: menuText,
-                    contextInfo: {
-                        externalAdReply: {
-                            title: `👑 ${botName} PREMIUM 👑`,
-                            body: 'Pilih menu di bawah ini',
-                            thumbnail: this.cachedBanner,
-                            sourceUrl: "https://github.com/itsliaaa/baileys",
-                            mediaType: 1,
-                            renderLargerThumbnail: true
-                        }
-                    }
-                }, { quoted: msg });
-            } else {
-                await sock.sendMessage(from, { text: menuText }, { quoted: msg });
-            }
-
-        } catch (err) {
-            console.error('DEBUG: Gagal mengirim menu:', err.message);
-            await sock.sendMessage(from, { text: menuText }, { quoted: msg });
-        }
+        await sock.sendMessage(from, { text: menuText }, { quoted: msg });
     }
 };
