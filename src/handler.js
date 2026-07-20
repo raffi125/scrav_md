@@ -366,6 +366,7 @@ async function messageHandler(sock, rawMsg) {
                 const canExecute = db.deductLimit(jid);
 
                 if (!canExecute) {
+                    console.log(`[DEBUG-LIMIT] User gagal limit. JID asli: ${jid} | Di config.ownerNumber: ${config.ownerNumber}`);
                     await sock.sendMessage(from, {
                         text: '❌ *LIMIT HABIS*\n\nLimit harian Anda sudah habis. Silakan tunggu reset besok jam 00:00, atau ketik *!buypremium* untuk membeli akses tanpa batas (LIFETIME tersedia)!'
                     }, { quoted: msg });
