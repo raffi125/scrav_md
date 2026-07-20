@@ -64,8 +64,8 @@ function serialize(msg, sock) {
         msg.reply = async (text) => {
             return await sock.sendMessage(msg.from, { text }, { quoted: msg });
         };
-        msg.react = async (emoji) => {
-            return await sock.sendMessage(msg.from, { react: { text: emoji, key: msg.key } });
+        msg.react = (emoji) => {
+            sock.sendMessage(msg.from, { react: { text: emoji, key: msg.key } }).catch(() => {});
         };
     }
 
