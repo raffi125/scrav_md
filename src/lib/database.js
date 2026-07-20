@@ -156,6 +156,12 @@ function getUser(jid) {
  */
 function deductLimit(jid) {
     if (!jid) return false;
+    
+    const phone = getPhone(jid);
+    if (phone === getPhone(config.ownerNumber)) return true;
+    if (config.botNumber && phone === getPhone(config.botNumber)) return true;
+    
+    // Fallback original includes check just in case
     if (jid.includes(config.ownerNumber) || jid.includes(config.botNumber)) return true;
 
     const user = getUser(jid);
@@ -222,6 +228,12 @@ function resetAllLimits() {
  */
 function handleAntiSpam(jid) {
     if (!jid) return false;
+    
+    const phone = getPhone(jid);
+    if (phone === getPhone(config.ownerNumber)) return false;
+    if (config.botNumber && phone === getPhone(config.botNumber)) return false;
+    
+    // Fallback original includes check just in case
     if (jid.includes(config.ownerNumber) || jid.includes(config.botNumber)) return false;
 
     const user = getUser(jid);
