@@ -1,3 +1,4 @@
+const { ScravBotApi } = require('../../lib/apimanager');
 const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 
 module.exports = {
@@ -15,11 +16,11 @@ module.exports = {
         }
         await msg.react('⏳');
         try {
-            const { bratGen } = require('brat-canvas');
-            const buffer = await bratGen(text, { C_BG: '#8ACE00', BLUR: 6, FS_MAX: 400, BOX_PAD: 60, LINE_H: 1.0 });
-            
+            const opt = { responseType: 'arraybuffer' };
+            const buffer = await ScravBotApi.ScravBot.bratGreen(text, opt);
+            if (!buffer || buffer.length < 100) throw new Error('Gagal mendapatkan gambar dari API');
             const sticker = new Sticker(buffer, { pack: 'SCRAVBOT', author: 'Bot Terkece', type: StickerTypes.FULL, quality: 50, background: 'transparent' });
-            await sock.sendMessage(from, { sticker: await sticker.toBuffer()  }, { quoted: msg });
+            await sock.sendMessage(from, { sticker: await sticker.toBuffer() }, { quoted: msg });
             await msg.react('✅');
         } catch (error) {
             console.error('Brat Error:', error.message);
