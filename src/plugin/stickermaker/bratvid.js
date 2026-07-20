@@ -1,4 +1,3 @@
-const { bratVid } = require('brat-canvas/video');
 const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 
 module.exports = {
@@ -16,7 +15,7 @@ module.exports = {
         }
         await msg.react('⏳');
         try {
-            // Generate video (MP4) secara lokal pakai brat-canvas
+            const { bratVid } = require('brat-canvas/video');
             const buffer = await bratVid(text, {
                 outputFormat: 'mp4',
                 fast_progress: true
