@@ -1,8 +1,10 @@
+const axios = require('axios');
+
 module.exports = {
     name: 'idlix',
     aliases: ['searchfilm', 'film', 'carifilm', 'idlixsearch'],
     limit: true,
-    description: 'Mencari film luar negeri di Idlix (tidak ada film Indonesia)',
+    description: 'Mencari film luar negeri di Idlix (film Indonesia ditolak)',
     category: 'Tools',
     async execute(sock, msg, args) {
         const { from } = msg;
@@ -16,6 +18,31 @@ module.exports = {
         await sock.sendMessage(from, { react: { text: "⏳", key: msg.key } });
 
         try {
+            // Cek OMDb untuk deteksi film Indonesia (cache via global)
+            if (!global.omdbCache) global.omdbCache = {};
+            let isIndo = false;
+            const cacheKey = query.toLowerCase().trim();
+
+            if (cacheKey in global.omdbCache) {
+                isIndo = global.omdbCache[cacheKey];
+            } else {
+                try {
+                    const omdbRes = await axios.get(`https://www.omdbapi.com/?apikey=trilogy&t=${encodeURIComponent(query)}`, { timeout: 6000 });
+                    const omdb = omdbRes.data;
+                    if (omdb && omdb.Country) {
+                        isIndo = omdb.Country.toLowerCase().includes('indonesia');
+                    }
+                } catch (e) {
+                    // OMDb gagal, skip filter
+                }
+                global.omdbCache[cacheKey] = isIndo;
+            }
+
+            if (isIndo) {
+                await sock.sendMessage(from, { text: `❌ *Ditolak!*\n\n"${query}" terdeteksi sebagai film *Indonesia*.\nIdlix hanya menyediakan film *luar negeri* (Hollywood, Asia, Eropa).\n\nSilakan cari judul film internasional!` }, { quoted: msg });
+                return;
+            }
+
             const cloudscraper = require('cloudscraper');
 
             let formattedQuery = query.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
