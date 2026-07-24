@@ -25,10 +25,10 @@ module.exports = {
             let sourceName = '';
 
             try {
-                // 1. UTAMAKAN Local yt-dlp (Buffer ke memori via ffmpeg)
+                // 1. UTAMAKAN yt-dlp → ffmpeg → MP3 buffer
                 const info = await youtubedl(url, { dumpSingleJson: true, noWarnings: true, noCheckCertificates: true, format: 'bestaudio' });
                 if (!info || !info.url) throw new Error('Local yt-dlp failed to get URL');
-                
+
                 const buffer = await new Promise((resolve, reject) => {
                     const { spawn } = require('child_process');
                     const ffmpeg = spawn('ffmpeg', ['-i', info.url, '-vn', '-acodec', 'libmp3lame', '-b:a', '128k', '-f', 'mp3', 'pipe:1']);
@@ -53,7 +53,7 @@ module.exports = {
                     try {
                         const res = await apiCall();
                         const data = res?.data || res?.result;
-                        let mediaUrl = data?.audio || data?.mp3 || data?.url;
+                        let mediaUrl = data?.audio || data?.mp3 || data?.url || data?.audio_url || data?.audioUrl;
                         if (typeof mediaUrl === 'object' && mediaUrl !== null) {
                             mediaUrl = mediaUrl.url || mediaUrl.link || mediaUrl.download || mediaUrl;
                         }
@@ -88,7 +88,7 @@ module.exports = {
 
             await sock.sendMessage(from, { 
                 audio: audioPayload, 
-                mimetype: 'audio/mp4',
+                mimetype: 'audio/mpeg',
                 ptt: false
             }, { quoted: msg });
             
