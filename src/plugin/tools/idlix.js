@@ -28,12 +28,12 @@ module.exports = {
             const response = await cloudscraper.get(searchUrl);
             const data = JSON.parse(response);
 
-            if (!data || !data.data || data.data.length === 0) {
+            if (!data || !data.results || data.results.length === 0) {
                 await sock.sendMessage(from, { text: `❌ Maaf, tidak ada film yang cocok dengan pencarian '${query}' di Idlix. Coba periksa kembali ejaannya!` }, { quoted: msg });
                 return;
             }
 
-            const results = data.data;
+            const results = data.results;
 
             let responseText = `🔍 *Hasil Pencarian untuk:* "${query}"\n\n`;
 
