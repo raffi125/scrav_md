@@ -13,32 +13,21 @@ module.exports = {
         }
 
         const query = args.join(' ');
-        const queryLower = query.toLowerCase();
-
-        // Cek apakah user mencari film Indonesia
-        const indoKeywords = ['indonesia', 'film indo', 'bioskop indo', 'sinetron', 'ftv', 'lokal'];
-        if (indoKeywords.some(k => queryLower.includes(k))) {
-            await sock.sendMessage(from, { text: '❌ Idlix hanya menyediakan film luar negeri (Hollywood, Asia, dll), tidak ada film Indonesia. Coba cari judul film internasional!' }, { quoted: msg });
-            return;
-        }
-
         await sock.sendMessage(from, { react: { text: "⏳", key: msg.key } });
 
         try {
             const cloudscraper = require('cloudscraper');
 
-            // Format URL search (ubah spasi jadi %20)
-            let formattedQuery = queryLower.replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+            let formattedQuery = query.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
             const urlQuery = formattedQuery.split(' ').join('%20');
             
-            // Menggunakan API pencarian Idlix
             const searchUrl = `https://z2.idlixku.com/api/search?q=${urlQuery}`;
 
             const response = await cloudscraper.get(searchUrl);
             const data = JSON.parse(response);
 
             if (!data || !data.results || data.results.length === 0) {
-                await sock.sendMessage(from, { text: `❌ Maaf, tidak ada film yang cocok dengan pencarian '${query}' di Idlix. Idlix hanya memiliki film luar negeri, coba cari judul film internasional!` }, { quoted: msg });
+                await sock.sendMessage(from, { text: `❌ Tidak ada hasil untuk "${query}".\n\n⚠️ Idlix hanya menyediakan film *luar negeri* (Hollywood, Asia, Eropa).\nFilm Indonesia tidak tersedia di Idlix.\n\nCoba cari judul film internasional!` }, { quoted: msg });
                 return;
             }
 
@@ -47,7 +36,6 @@ module.exports = {
             let responseText = `🔍 *Hasil Pencarian untuk:* "${query}"\n\n`;
 
             results.forEach((item, index) => {
-                // Link khusus sesuai dengan format: https://z2.idlixku.com/<contentType>/<slug>
                 const type = item.contentType === 'tv_series' ? 'series' : item.contentType;
                 const exactSearchLink = `https://z2.idlixku.com/${type}/${item.slug}`;
 
@@ -68,7 +56,7 @@ module.exports = {
 
         } catch (err) {
             console.error('Idlix Search Error:', err.message);
-            await sock.sendMessage(from, { text: `❌ Maaf, terjadi kesalahan saat mencari film '${query}'. Coba lagi nanti!` }, { quoted: msg });
+            await sock.sendMessage(from, { text: `❌ Maaf, terjadi kesalahan saat mencari film "${query}". Coba lagi nanti!` }, { quoted: msg });
         }
     }
 };
