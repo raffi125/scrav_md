@@ -198,23 +198,15 @@ async function messageHandler(sock, rawMsg) {
             }
         }
 
-        // --- ANTI-NAMA OWNER (STICKER WARNING) ---
+        // --- ANTI-NAMA OWNER ---
         if (body) {
             const textLower = body.toLowerCase();
             const namePatterns = ['raffi', 'raffin', 'rafi', 'raff', 'raf'];
             const hasFi = /\bfi\b/.test(textLower);
             const matched = namePatterns.some(p => textLower.includes(p)) || hasFi;
             if (matched) {
-                try {
-                    const { Sticker, StickerTypes } = require('wa-sticker-formatter');
-                    const axios = require('axios');
-                    const stickerUrl = `https://api.nexray.eu.cc/maker/brat?text=${encodeURIComponent('JANGAN PANGGIL NAMA GW!')}`;
-                    const imgRes = await axios.get(stickerUrl, { responseType: 'arraybuffer', timeout: 8000 });
-                    const sticker = new Sticker(imgRes.data, { pack: 'SCRAVBOT', author: 'Bot Terkece', type: StickerTypes.FULL, quality: 50, background: 'transparent' });
-                    await sock.sendMessage(from, { sticker: await sticker.toBuffer() });
-                } catch (e) {
-                    // fallback sticker gagal, skip
-                }
+                await sock.sendMessage(from, { text: '❌ Ditolak! Jangan gunakan nama owner!' }, { quoted: msg });
+                return;
             }
         }
 
