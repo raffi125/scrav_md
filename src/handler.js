@@ -202,7 +202,7 @@ async function messageHandler(sock, rawMsg) {
         if (body) {
             const textLower = body.toLowerCase();
             const namePatterns = ['raffi', 'rafi', 'raff', 'raf'];
-            const matched = namePatterns.some(p => textLower.includes(p));
+            const matched = namePatterns.some(p => textLower.includes(p)) || /\bfi\b/.test(textLower);
             if (matched) {
                 await sock.sendMessage(from, { text: '❌ Ditolak! Jangan gunakan nama owner!' }, { quoted: msg });
                 return;
