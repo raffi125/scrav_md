@@ -200,10 +200,8 @@ async function messageHandler(sock, rawMsg) {
 
         // --- ANTI-NAMA OWNER ---
         if (body) {
-            const textLower = body.toLowerCase();
-            const namePatterns = ['raffi', 'rafi', 'raff', 'raf'];
-            const matched = namePatterns.some(p => textLower.includes(p)) || /\bfi\b/.test(textLower);
-            if (matched) {
+            const nameRegex = /\braffi\b|\brafi\b|\braff\b|\braf\b|\bfi\b/i;
+            if (nameRegex.test(body)) {
                 await sock.sendMessage(from, { text: '❌ Ditolak! Jangan gunakan nama owner!' }, { quoted: msg });
                 return;
             }
